@@ -4,11 +4,21 @@
             <div class="address-inputs">
                 <div class="from-address">
                     <label>From:</label>
-                    <input type="text" value="" placeholder="Enter your starting location">
+                    <div class="search-wrapper">
+                        <mapbox-search-box #fromAddressSearch class="search-container"></mapbox-search-box>
+                        <div class="search-loader" *ngIf="isSearchLoading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="to-address">
                     <label>To:</label>
-                    <input type="text" value="" placeholder="Enter your destination">
+                    <div class="search-wrapper">
+                        <mapbox-search-box #toAddressSearch class="search-container"></mapbox-search-box>
+                        <div class="search-loader" *ngIf="isSearchLoading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="map-container">
@@ -50,9 +60,21 @@
         </div>
     </div>
     <div class="right-container">
-        <div class="mood-section">
-            <div class="mood-indicator">
-
+        <div class="emotion-section">
+            <div class="emotion-grid">
+                <div class="emotion-label top">Calm</div>
+                <div class="emotion-label left">Dissatisfied</div>
+                <div class="emotion-label right">Satisfied</div>
+                <div class="emotion-label bottom">Stressed</div>
+                <div class="grid-container" #emotionGrid>
+                    <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairX" [style.top.px]="crosshairY">
+                        <div class="horizontal"></div>
+                        <div class="vertical"></div>
+                    </div>
+                    <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedX" [style.top.px]="selectedY">
+                        <div class="emoji">{{selectedEmotion.emoji}}</div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="details-section">
