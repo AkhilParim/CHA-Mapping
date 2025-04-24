@@ -32,10 +32,7 @@ export class AddCardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Emotion grid properties
   showCrosshair = false;
-  crosshairX = 0;
-  crosshairY = 0;
-  selectedX = 0;
-  selectedY = 0;
+  crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
 
   ngOnInit(): void {
@@ -114,44 +111,38 @@ export class AddCardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private initializeMapboxSearchBox(
+    searchBox: any,
+    isFromAddress: boolean
+  ): void {
+    searchBox.accessToken = environment.mapboxToken;
+    searchBox.options = {
+      proximity: this.initialCoordinates,  // TODO: Make the proximity based on the maps current location
+      types: ['address', 'poi', 'neighborhood', 'place', 'city']
+    };
+    searchBox.addEventListener('retrieve', (event: any) => {
+      const coordinates = event.detail?.features?.[0]?.geometry?.coordinates;
+      if (coordinates) {
+        const currentMarker = isFromAddress ? this.fromMarker : this.toMarker;
+        if (currentMarker) {
+          currentMarker.remove();
+        }
+        if (isFromAddress) {
+          this.fromMarker = this.createMarker(coordinates, true);
+        } else {
+          this.toMarker = this.createMarker(coordinates, false);
+        }
+        this.fitMapToMarkers();
+      }
+    });
+  }
+
   initializeSearchBox(): void {
     if (this.fromAddressSearch?.nativeElement && this.toAddressSearch?.nativeElement) {
       if (customElements.get('mapbox-search-box')) {
-        // Initialize "From" search box
-        const fromSearchBox = this.fromAddressSearch.nativeElement;
-        fromSearchBox.accessToken = environment.mapboxToken;
-        fromSearchBox.options = {
-          proximity: this.initialCoordinates,  // TODO: Make the proximity based on the maps current location
-          types: ['address', 'poi', 'neighborhood', 'place', 'city']
-        };
-        fromSearchBox.addEventListener('retrieve', (event: any) => {
-          const coordinates = event.detail?.features?.[0]?.geometry?.coordinates;
-          if (coordinates) {
-            if (this.fromMarker) {
-              this.fromMarker.remove();
-            }
-            this.fromMarker = this.createMarker(coordinates, true);
-            this.fitMapToMarkers();
-          }
-        });
-
-        // Initialize "To" search box
-        const toSearchBox = this.toAddressSearch.nativeElement;
-        toSearchBox.accessToken = environment.mapboxToken;
-        toSearchBox.options = {
-          proximity: this.initialCoordinates,
-          types: ['address', 'poi', 'neighborhood', 'place', 'city']
-        };
-        toSearchBox.addEventListener('retrieve', (event: any) => {
-          const coordinates = event.detail?.features?.[0]?.geometry?.coordinates;
-          if (coordinates) {
-            if (this.toMarker) {
-              this.toMarker.remove();
-            }
-            this.toMarker = this.createMarker(coordinates, false);
-            this.fitMapToMarkers();
-          }
-        });
+        // Initialize both search boxes
+        this.initializeMapboxSearchBox(this.fromAddressSearch.nativeElement, true);
+        this.initializeMapboxSearchBox(this.toAddressSearch.nativeElement, false);
         this.isSearchLoading = false;
       } else {
         // If the custom element is not yet defined, wait a bit and try again
@@ -166,8 +157,10 @@ export class AddCardComponent implements OnInit, AfterViewInit, OnDestroy {
     grid.addEventListener('mousemove', (e: MouseEvent) => {
       const rect = grid.getBoundingClientRect();
       this.showCrosshair = true;
-      this.crosshairX = e.clientX - rect.left;
-      this.crosshairY = e.clientY - rect.top;
+      this.crosshairPosition = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
     });
 
     grid.addEventListener('mouseleave', () => {
@@ -176,25 +169,24 @@ export class AddCardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     grid.addEventListener('click', (e: MouseEvent) => {
       const rect = grid.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const selectedPoint = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
       
       // Calculate emotion based on position
-      const xPercent = x / rect.width;
-      const yPercent = y / rect.height;
+      const xPercent = selectedPoint.x / rect.width;
+      const yPercent = selectedPoint.y / rect.height;
       
-      this.selectedX = x;
-      this.selectedY = y;
       this.selectedEmotion = {
-        x: xPercent,
-        y: yPercent,
+        x: selectedPoint.x,
+        y: selectedPoint.y,
         emoji: this.getEmotionEmoji(xPercent, yPercent)
       };
     });
   }
 
   private getEmotionEmoji(x: number, y: number): string {
-    // Create more granular emotion mapping based on position
     // x: 0 = dissatisfied, 1 = satisfied
     // y: 0 = calm, 1 = stressed
     

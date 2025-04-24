@@ -67,11 +67,11 @@
                 <div class="emotion-label right">Satisfied</div>
                 <div class="emotion-label bottom">Stressed</div>
                 <div class="grid-container" #emotionGrid>
-                    <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairX" [style.top.px]="crosshairY">
+                    <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairPosition.x" [style.top.px]="crosshairPosition.y">
                         <div class="horizontal"></div>
                         <div class="vertical"></div>
                     </div>
-                    <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedX" [style.top.px]="selectedY">
+                    <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedEmotion.x" [style.top.px]="selectedEmotion.y">
                         <div class="emoji">{{selectedEmotion.emoji}}</div>
                     </div>
                 </div>
