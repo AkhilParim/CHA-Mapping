@@ -11,14 +11,14 @@ interface EmotionState {
 }
 
 @Component({
-  selector: 'app-add-card',
+  selector: 'app-place-editor',
   standalone: true,
   imports: [CommonModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  templateUrl: './add-card.component.html',
-  styleUrl: './add-card.component.scss'
+  templateUrl: './place-editor.component.html',
+  styleUrl: './place-editor.component.scss'
 })
-export class AddCardComponent implements OnInit, AfterViewInit, OnDestroy {
+export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef;
   @ViewChild('fromAddressSearch') fromAddressSearch!: ElementRef;
   @ViewChild('toAddressSearch') toAddressSearch!: ElementRef;

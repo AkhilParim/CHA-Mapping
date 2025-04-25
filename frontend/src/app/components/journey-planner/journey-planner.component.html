@@ -1,0 +1,50 @@
+<div class="container">
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="date-selector-container">
+                <div class="date-selector" #dateSelector>
+                    <div class="date" 
+                        *ngFor="let date of journeyDates" 
+                        [class.active]="date === activeDate"
+                        (click)="setActiveDate(date)">
+                        {{date}}
+                    </div>
+                </div>
+                <div class="date-picker-container">
+                    <!-- Hidden input for date picker -->
+                    <input [matDatepicker]="picker" [(ngModel)]="pickerDate" (dateChange)="onDateSelected($event)" style="display: none">
+                    <mat-datepicker-toggle [for]="picker" style="display: none"></mat-datepicker-toggle>
+                    <mat-datepicker #picker 
+                        (closed)="onDatePickerClosed()"
+                        [restoreFocus]="false">
+                        <mat-datepicker-actions>
+                            <button mat-button matDatepickerCancel>Cancel</button>
+                            <button mat-raised-button color="primary" matDatepickerApply>Apply</button>
+                        </mat-datepicker-actions>
+                    </mat-datepicker>
+                    <button class="add-date" (click)="openDatePicker($event)" #addDateBtn>
+                        <span class="plus">+</span>
+                        <span class="text">Add Date</span>
+                    </button>
+                </div>
+            </div>
+            <div class="places-list">
+                <div class="place" *ngFor="let place of places">
+                    <span>{{place.id}}: {{place.name}} &#64; {{place.address}} {{place.zipCode}}</span>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="add-btn" (click)="addCard()">Add</button>
+                <button class="edit-btn" (click)="addCard()">Edit</button>
+                <button class="remove-btn">Remove</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div #mapContainer class="map-container"></div>
+        </div>
+    </div>
+    <div class="bottom-buttons">
+        <button class="cancel-btn">Cancel</button>
+        <button class="submit-btn">Submit</button>
+    </div>
+</div>

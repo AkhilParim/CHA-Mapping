@@ -1,5 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
 html, body {
     height: 100%;
     margin: 0;
@@ -9,4 +11,47 @@ html, body {
 
 p {
     margin: 0;
+}
+
+/* Material Date Picker Styles */
+.mat-datepicker-content {
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0 4px 5px 0 rgba(0, 0, 0, 0.14),
+                0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+    z-index: 1000;
+    transition: none !important;
+    
+    .mat-calendar {
+        width: 280px !important;
+    }
+    
+    .mat-datepicker-actions {
+        padding: 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+}
+
+.date-picker-container {
+    position: relative;
+}
+
+.date-picker-dialog {
+    .mat-mdc-dialog-container {
+        padding: 24px;
+    }
+    
+    .mat-mdc-dialog-content {
+        padding: 20px 24px;
+    }
+    
+    .mat-mdc-dialog-actions {
+        padding: 8px 24px;
+    }
+}
+
+.mat-mdc-form-field {
+    width: 100%;
 }
