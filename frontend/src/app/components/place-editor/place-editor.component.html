@@ -1,127 +1,168 @@
-<div class="container">
-    <div class="left-container">
-        <div class="location-section">
-            <div class="address-inputs">
-                <div class="from-address">
-                    <label>From:</label>
-                    <div class="search-wrapper">
-                        <mapbox-search-box #fromAddressSearch class="search-container"></mapbox-search-box>
-                        <div class="search-loader" *ngIf="isSearchLoading">
-                            <div class="loader"></div>
+<form [formGroup]="placeForm" (ngSubmit)="onSubmit()">
+    <div class="container">
+        <div class="left-container">
+            <h1 class="page-title">
+                <span class="mode-indicator" [class.edit-mode]="isEditMode">
+                    {{ isEditMode ? 'Edit Place' : 'Add New Place' }}
+                </span>
+            </h1>
+            <div class="location-section">
+                <div class="address-inputs">
+                    <div class="from-address" data-field="fromAddress">
+                        <label>From: </label>
+                        <div class="search-wrapper">
+                            <mapbox-search-box #fromAddressSearch class="search-container" [class.error]="formErrors['fromAddress']"></mapbox-search-box>
+                            <div class="search-loader" *ngIf="isSearchLoading">
+                                <div class="loader"></div>
+                            </div>
+                        </div>
+                        <div class="error-message" *ngIf="formErrors['fromAddress']">
+                            {{ formErrors['fromAddress'] }}
+                        </div>
+                    </div>
+                    <div class="to-address" data-field="toAddress">
+                        <label>To: </label>
+                        <div class="search-wrapper">
+                            <mapbox-search-box #toAddressSearch class="search-container" [class.error]="formErrors['toAddress']"></mapbox-search-box>
+                            <div class="search-loader" *ngIf="isSearchLoading">
+                                <div class="loader"></div>
+                            </div>
+                        </div>
+                        <div class="error-message" *ngIf="formErrors['toAddress']">
+                            {{ formErrors['toAddress'] }}
                         </div>
                     </div>
                 </div>
-                <div class="to-address">
-                    <label>To:</label>
-                    <div class="search-wrapper">
-                        <mapbox-search-box #toAddressSearch class="search-container"></mapbox-search-box>
-                        <div class="search-loader" *ngIf="isSearchLoading">
-                            <div class="loader"></div>
-                        </div>
-                    </div>
+                <div class="map-container">
+                    <div #mapContainer id="map"></div>
                 </div>
             </div>
-            <div class="map-container">
-                <div #mapContainer id="map"></div>
-            </div>
+            <!-- <div class="geo-info-section">
+                <div class="geo-toggle">
+                    <label>Show Geo Info</label>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="geo-info-table">
+                    <table>
+                        <tr>
+                            <th>Item</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>City</td>
+                            <td>Rockford</td>
+                        </tr>
+                        <tr>
+                            <td>Quality food availability</td>
+                            <td>Low</td>
+                        </tr>
+                        <tr>
+                            <td>Crime</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td>Pollution</td>
+                            <td>High</td>
+                        </tr>
+                    </table>
+                </div>
+            </div> -->
         </div>
-        <div class="geo-info-section">
-            <div class="geo-toggle">
-                <label>Show Geo Info</label>
-                <label class="switch">
-                    <input type="checkbox">
-                    <span class="slider"></span>
-                </label>
+        <div class="right-container">
+            <div class="emotion-section">
+                <div class="emotion-grid">
+                    <div class="emotion-label top">Calm</div>
+                    <div class="emotion-label left">Dissatisfied</div>
+                    <div class="emotion-label right">Satisfied</div>
+                    <div class="emotion-label bottom">Stressed</div>
+                    <div class="grid-container" #emotionGrid>
+                        <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairPosition.x" [style.top.px]="crosshairPosition.y">
+                            <div class="horizontal"></div>
+                            <div class="vertical"></div>
+                        </div>
+                        <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedEmotion.x" [style.top.px]="selectedEmotion.y">
+                            <div class="emoji">{{selectedEmotion.emoji}}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="geo-info-table">
-                <table>
-                    <tr>
-                        <th>Item</th>
-                        <th>Description</th>
-                    </tr>
-                    <tr>
-                        <td>City</td>
-                        <td>Rockford</td>
-                    </tr>
-                    <tr>
-                        <td>Quality food availability</td>
-                        <td>Low</td>
-                    </tr>
-                    <tr>
-                        <td>Crime</td>
-                        <td>High</td>
-                    </tr>
-                    <tr>
-                        <td>Pollution</td>
-                        <td>High</td>
-                    </tr>
-                </table>
+            <div class="details-section">
+                <div class="date-time">
+                    <div class="date-picker" data-field="date">
+                        <label>Date: </label>
+                        <input type="date" formControlName="date" [class.error]="formErrors['date']">
+                        <div class="error-message" *ngIf="formErrors['date']">
+                            {{ formErrors['date'] }}
+                        </div>
+                    </div>
+                    <div class="time-picker" data-field="startTime">
+                        <label>Time: </label>
+                        <input type="time" formControlName="startTime" [class.error]="formErrors['startTime']">
+                        <div class="error-message" *ngIf="formErrors['startTime']">
+                            {{ formErrors['startTime'] }}
+                        </div>
+                    </div>
+                    <span>to</span>
+                    <div class="time-picker" data-field="endTime">
+                        <input type="time" formControlName="endTime" [class.error]="formErrors['endTime']">
+                        <div class="error-message" *ngIf="formErrors['endTime']">
+                            {{ formErrors['endTime'] }}
+                        </div>
+                    </div>
+                </div>
+                <div class="lists-container">
+                    <div class="activity-type" data-field="activityType">
+                        <label>Activity Type: </label>
+                        <div class="scroll-list" [class.error]="formErrors['activityType']">
+                            <div class="option-list">
+                                <p class="option" *ngFor="let activity of activityTypes" 
+                                    [class.selected]="placeForm.get('activityType')?.value === activity"
+                                    (click)="placeForm.patchValue({activityType: activity})">
+                                    {{activity}}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="error-message" *ngIf="formErrors['activityType']">
+                            {{ formErrors['activityType'] }}
+                        </div>
+                    </div>
+                    <div class="transport-type" data-field="transportType">
+                        <label>Transport Type: </label>
+                        <div class="scroll-list" [class.error]="formErrors['transportType']">
+                            <div class="option-list">
+                                <p class="option" *ngFor="let transport of transportTypes"
+                                    [class.selected]="placeForm.get('transportType')?.value === transport"
+                                    (click)="placeForm.patchValue({transportType: transport})">
+                                    {{transport}}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="error-message" *ngIf="formErrors['transportType']">
+                            {{ formErrors['transportType'] }}
+                        </div>
+                    </div>
+                </div>
+                <div class="place-name-input" data-field="placeLabel">
+                    <label>Label this place:</label>
+                    <input type="text" formControlName="placeLabel" [class.error]="formErrors['placeLabel']" placeholder="e.g. Home, Work, Gym, Grandma's House">
+                    <div class="error-message" *ngIf="formErrors['placeLabel']">
+                        {{ formErrors['placeLabel'] }}
+                    </div>
+                </div>
+                <div class="comments">
+                    <label>Comments:</label>
+                    <input type="text" formControlName="comments" placeholder="Add your comments here (optional)">
+                </div>
+                <div class="action-buttons">
+                    <button type="button" class="cancel-btn" (click)="onCancel()">Cancel</button>
+                    <button type="submit" class="submit-btn" [disabled]="formSubmitted && !placeForm.valid">
+                        {{ isEditMode ? 'Save Changes' : 'Add Place' }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    <div class="right-container">
-        <div class="emotion-section">
-            <div class="emotion-grid">
-                <div class="emotion-label top">Calm</div>
-                <div class="emotion-label left">Dissatisfied</div>
-                <div class="emotion-label right">Satisfied</div>
-                <div class="emotion-label bottom">Stressed</div>
-                <div class="grid-container" #emotionGrid>
-                    <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairPosition.x" [style.top.px]="crosshairPosition.y">
-                        <div class="horizontal"></div>
-                        <div class="vertical"></div>
-                    </div>
-                    <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedEmotion.x" [style.top.px]="selectedEmotion.y">
-                        <div class="emoji">{{selectedEmotion.emoji}}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="details-section">
-            <div class="date-time">
-                <div class="date-picker">
-                    <label>Date: </label>
-                    <input type="date" value="2024-03-01">
-                </div>
-                <div class="time-picker">
-                    <label>Time: </label>
-                    <input type="time" value="10:30">
-                </div>
-                <span>to</span>
-                <div class="time-picker">
-                    <input type="time" value="10:30">
-                </div>
-            </div>
-            <div class="lists-container">
-                <div class="activity-type">
-                    <label>Activity Type: </label>
-                    <div class="scroll-list">
-                        <div class="option-list">
-                            <p class="option">Grocery</p>
-                            <p class="option">School</p>
-                            <p class="option">Friend/Neighbor</p>
-                            <p class="option">Family/Relative</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="transport-type">
-                    <label>Transport Type: </label>
-                    <div class="scroll-list">
-                        <div class="option-list">
-                            <p class="option">Drive</p>
-                            <p class="option">Bus</p>
-                            <p class="option">Train</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="comments">
-                <textarea placeholder="Add your comments here"></textarea>
-            </div>
-            <div class="action-buttons">
-                <button class="cancel-btn">Cancel</button>
-                <button class="submit-btn">Submit</button>
-            </div>
-        </div>
-    </div>
-</div>
+</form>

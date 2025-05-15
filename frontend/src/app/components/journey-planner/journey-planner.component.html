@@ -29,14 +29,41 @@
                 </div>
             </div>
             <div class="places-list">
-                <div class="place" *ngFor="let place of places">
-                    <span>{{place.id}}: {{place.name}} &#64; {{place.address}} {{place.zipCode}}</span>
+                <div class="place" 
+                    *ngFor="let place of places; let i = index"
+                    [class.selected]="place === selectedPlace"
+                    (click)="selectPlace(place)">
+                    <span class="place-info">
+                      <span class="marker-alphabet">{{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i % 26]}}.</span>
+                      <span>{{place.activityType}} &#64; {{place.placeLabel}}</span>
+                    </span>
+                </div>
+                <div class="no-places" *ngIf="!activeDate">
+                    Select a date to add places
+                </div>
+                <div class="no-places" *ngIf="activeDate && places.length === 0">
+                    No places added to this date yet
                 </div>
             </div>
             <div class="action-buttons">
-                <button class="add-btn" (click)="addCard()">Add</button>
-                <button class="edit-btn" (click)="addCard()">Edit</button>
-                <button class="remove-btn">Remove</button>
+                <button class="add-btn" 
+                        [disabled]="!activeDate"
+                        [class.disabled]="!activeDate"
+                        (click)="addPlace()">
+                    Add
+                </button>
+                <button class="edit-btn" 
+                        [disabled]="isEditRemoveDisabled()"
+                        [class.disabled]="isEditRemoveDisabled()"
+                        (click)="editCard()">
+                    Edit
+                </button>
+                <button class="remove-btn"
+                        [disabled]="isEditRemoveDisabled()"
+                        [class.disabled]="isEditRemoveDisabled()"
+                        (click)="removeCard()">
+                    Remove
+                </button>
             </div>
         </div>
         <div class="right-panel">
@@ -44,7 +71,6 @@
         </div>
     </div>
     <div class="bottom-buttons">
-        <button class="cancel-btn">Cancel</button>
-        <button class="submit-btn">Submit</button>
+        <button class="submit-btn" (click)="onSubmit()">Submit</button>
     </div>
 </div>

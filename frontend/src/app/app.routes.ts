@@ -4,11 +4,20 @@ import { JourneyPlannerComponent } from './components/journey-planner/journey-pl
 
 export const routes: Routes = [
     {
-        path: 'add',
+        path: 'place-editor',
         component: PlaceEditorComponent
     },
     {
-        path: '',
+        path: 'journey-planner',
         component: JourneyPlannerComponent
+    },
+    {
+        path: '',
+        redirectTo: 'journey-planner',
+        pathMatch: 'full'
+    },
+    {
+        path: '**',
+        redirectTo: 'journey-planner'
     }
 ];

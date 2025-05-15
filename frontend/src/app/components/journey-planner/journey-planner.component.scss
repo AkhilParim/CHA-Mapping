@@ -61,7 +61,7 @@
     display: flex;
     align-items: flex-end;
     padding: 20px 20px 0;
-    background-color: #ffffff;
+    background-color: #f2f5f7;
     border-bottom: 1px solid #e2e8f0;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
@@ -104,7 +104,7 @@
 
 .date {
     padding: 10px 16px;
-    background-color: #f8fafc;
+    background-color: #fbfbfb;
     color: #475569;
     border: 1px solid #e2e8f0;
     border-bottom: none;
@@ -134,7 +134,7 @@
         font-weight: 600;
         z-index: 1;
         box-shadow: 0 2px 4px rgba(76, 110, 245, 0.2);
-        transform: translateY(-2px);
+        border-bottom: 4px solid;
 
         &:hover {
             background-color: #364fc7;
@@ -191,6 +191,14 @@
     padding: 16px;
     background-color: #ffffff;
 
+    .no-places {
+        padding: 32px 16px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 15px;
+        font-style: italic;
+    }
+
     &::-webkit-scrollbar {
         width: 8px;
     }
@@ -208,38 +216,43 @@
             background: #cbd5e1;
         }
     }
-}
 
-.place {
-    padding: 16px;
-    border-bottom: 1px solid #e2e8f0;
-    cursor: pointer;
-    color: #334155;
-    transition: all 0.2s ease;
-    font-size: 15px;
-    line-height: 1.5;
-    background-color: #ffffff;
-    
-    &:last-child {
-        border-bottom: none;
-    }
-    
-    &:hover {
+    .place {
+        padding: 16px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        color: #334155;
+        transition: all 0.2s ease;
+        font-size: 15px;
+        line-height: 1.5;
         background-color: #f8fafc;
-        padding-left: 20px;
-    }
-    
-    &.selected {
-        background-color: #edf2ff;
-        color: #364fc7;
-        border-color: #dbe4ff;
-    }
+        
+        &:last-child {
+            margin-bottom: 0;
+        }
+        
+        &:hover {
+            background-color: #edf2ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
+        }
+        
+        &.selected {
+            background-color: #edf2ff;
+            border-color: #4c6ef5;
+            color: #364fc7;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
+        }
 
-    span {
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        span {
+            display: flex;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 }
 
@@ -247,56 +260,54 @@
     display: flex;
     gap: 12px;
     padding: 20px;
-    background-color: #ffffff;
+    background-color: #f1f5f9;
     border-top: 1px solid #e2e8f0;
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 16px;
     
     button {
         flex: 1;
-        padding: 12px;
+        padding: 12px 24px;
         border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 600;
+        border-radius: 8px;
         font-size: 15px;
-        letter-spacing: -0.2px;
+        font-weight: 500;
+        cursor: pointer;
         transition: all 0.2s ease;
         
         &.add-btn {
-            background-color: #40c057;
+            background-color: #4c6ef5;
             color: white;
-            box-shadow: 0 2px 4px rgba(64, 192, 87, 0.1);
             
-            &:hover {
-                background-color: #37b24d;
-                box-shadow: 0 4px 6px rgba(64, 192, 87, 0.2);
-                transform: translateY(-1px);
+            &:hover:not(.disabled) {
+                background-color: #364fc7;
             }
         }
         
         &.edit-btn {
-            background-color: #4c6ef5;
-            color: white;
-            box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
+            background-color: #f8fafc;
+            color: #4c6ef5;
+            border: 1px solid #4c6ef5;
             
-            &:hover {
-                background-color: #364fc7;
-                box-shadow: 0 4px 6px rgba(76, 110, 245, 0.2);
-                transform: translateY(-1px);
+            &:hover:not(.disabled) {
+                background-color: #edf2ff;
             }
         }
         
         &.remove-btn {
-            background-color: #fa5252;
-            color: white;
-            box-shadow: 0 2px 4px rgba(250, 82, 82, 0.1);
+            background-color: #f8fafc;
+            color: #e11d48;
+            border: 1px solid #e11d48;
             
-            &:hover {
-                background-color: #e03131;
-                box-shadow: 0 4px 6px rgba(250, 82, 82, 0.2);
-                transform: translateY(-1px);
+            &:hover:not(.disabled) {
+                background-color: #fff1f2;
             }
+        }
+
+        &.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
         }
     }
 }
@@ -322,6 +333,36 @@
     bottom: 0;
     border-radius: 16px;
     overflow: hidden;
+
+    ::ng-deep {
+        .custom-marker {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .to-marker {
+            background-color: #228be6;
+        }
+        .selected-marker {
+            background-color: #364fc7 !important;
+            z-index: 10;
+            border: 2px solid #364fc7;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            border: 2px solid white;
+            box-shadow: 0 0 12px 4px rgba(54, 79, 199, 0.25), 0 2px 8px rgba(0,0,0,0.18);
+            transition: width 0.2s cubic-bezier(0.4,0,0.2,1), height 0.2s cubic-bezier(0.4,0,0.2,1), font-size 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), background-color 0.2s;
+        }
+    }
 }
 
 .bottom-buttons {
@@ -373,4 +414,14 @@
             }
         }
     }
+}
+
+.marker-alphabet {
+    display: inline-block;
+    min-width: 18px;
+    font-weight: bold;
+    color: #228be6;
+    margin-right: 6px;
+    font-size: 15px;
+    letter-spacing: 1px;
 }

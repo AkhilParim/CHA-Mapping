@@ -1,8 +1,13 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { PlacesService } from '../../services/places.service';
 
 interface EmotionState {
   x: number;
@@ -10,10 +15,26 @@ interface EmotionState {
   emoji: string;
 }
 
+interface PlaceFormData {
+  id?: string;
+  placeLabel: string;
+  fromAddress: string;
+  toAddress: string;
+  fromCoordinates: [number, number];
+  toCoordinates: [number, number];
+  date: string;
+  startTime: string;
+  endTime: string;
+  activityType: string;
+  transportType: string;
+  comments: string;
+  emotion?: EmotionState | null;
+}
+
 @Component({
   selector: 'app-place-editor',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './place-editor.component.html',
   styleUrl: './place-editor.component.scss'
@@ -24,16 +45,119 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('toAddressSearch') toAddressSearch!: ElementRef;
   @ViewChild('emotionGrid') emotionGrid!: ElementRef;
 
+  placeForm!: FormGroup;
   map!: mapboxgl.Map;
   fromMarker: mapboxgl.Marker | null = null;
   toMarker: mapboxgl.Marker | null = null;
   initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914]; // Default coordinates to UIC Innovation Center
   isSearchLoading = true;
+  isEditMode = false;
+  originalDate: string | null = null;
+  formErrors: { [key: string]: string } = {};
+  formSubmitted = false;
+
+  activityTypes = [
+    'Home',
+    'Grocery',
+    'School',
+    'Friend/Neighbor',
+    'Family/Relative',
+    'Other'
+  ];
+
+  transportTypes = [
+    'Drive',
+    'Bus',
+    'Train',
+    'Other'
+  ];
 
   // Emotion grid properties
   showCrosshair = false;
   crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    public router: Router,
+    private placesService: PlacesService,
+    private dialog: MatDialog
+  ) {
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
+    const today = new Date();
+
+    this.placeForm = this.fb.group({
+      fromAddress: ['', Validators.required],
+      toAddress: ['', Validators.required],
+      fromCoordinates: [null, Validators.required],
+      toCoordinates: [null, Validators.required],
+      date: [today.toISOString().split('T')[0], Validators.required],
+      startTime: ['', Validators.required],
+      endTime: ['', [Validators.required, this.endTimeValidator.bind(this)]],
+      activityType: ['', Validators.required],
+      transportType: ['', Validators.required],
+      placeLabel: ['', Validators.required],
+      comments: [''],
+      emotion: [null]
+    });
+
+    // Subscribe to form changes for real-time validation
+    this.placeForm.valueChanges.subscribe(() => {
+      if (this.formSubmitted) {
+        this.validateForm();
+      }
+    });
+
+    // Get date and place ID from URL parameters
+    this.route.queryParams.subscribe(params => {
+      if (params['date']) {
+        this.placeForm.patchValue({ date: params['date'] });
+        this.originalDate = params['date'];
+      }
+      
+      if (params['mode'] === 'edit' && params['placeId']) {
+        this.isEditMode = true;
+        const place = this.placesService.getPlaceById(params['date'], params['placeId']);
+        if (place) {
+          this.placeForm.patchValue({
+            placeLabel: place.placeLabel || '',
+            fromAddress: place.fromAddress,
+            toAddress: place.toAddress,
+            fromCoordinates: place.fromCoordinates,
+            toCoordinates: place.toCoordinates,
+            date: place.date,
+            startTime: place.startTime,
+            endTime: place.endTime,
+            activityType: place.activityType,
+            transportType: place.transportType,
+            comments: place.comments,
+            emotion: place.emotion || null
+          });
+
+          // Set up markers after form is initialized
+          setTimeout(() => {
+            if (place.fromCoordinates) {
+              this.fromMarker = this.createMarker(place.fromCoordinates, true);
+            }
+            if (place.toCoordinates) {
+              this.toMarker = this.createMarker(place.toCoordinates, false);
+            }
+            if (this.fromMarker || this.toMarker) {
+              this.fitMapToMarkers();
+            }
+          });
+
+          if (place.emotion) {
+            this.selectedEmotion = place.emotion;
+          }
+        }
+      }
+    });
+  }
 
   ngOnInit(): void {
     mapboxgl.accessToken = environment.mapboxToken;
@@ -117,11 +241,28 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   ): void {
     searchBox.accessToken = environment.mapboxToken;
     searchBox.options = {
-      proximity: this.initialCoordinates,  // TODO: Make the proximity based on the maps current location
+      proximity: this.initialCoordinates,
       types: ['address', 'poi', 'neighborhood', 'place', 'city']
     };
+
+    // Set initial value if in edit mode
+    if (this.isEditMode) {
+      const address = isFromAddress ? this.placeForm.get('fromAddress')?.value : this.placeForm.get('toAddress')?.value;
+      if (address) {
+        // Need to wait for the component to be fully initialized
+        setTimeout(() => {
+          const input = searchBox.querySelector('input');
+          if (input) {
+            input.value = address;
+          }
+        }, 100);
+      }
+    }
+
     searchBox.addEventListener('retrieve', (event: any) => {
       const coordinates = event.detail?.features?.[0]?.geometry?.coordinates;
+      const address = event.detail?.features?.[0]?.properties?.full_address;
+      
       if (coordinates) {
         const currentMarker = isFromAddress ? this.fromMarker : this.toMarker;
         if (currentMarker) {
@@ -129,8 +270,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         if (isFromAddress) {
           this.fromMarker = this.createMarker(coordinates, true);
+          this.placeForm.patchValue({
+            fromAddress: address,
+            fromCoordinates: coordinates
+          });
         } else {
           this.toMarker = this.createMarker(coordinates, false);
+          this.placeForm.patchValue({
+            toAddress: address,
+            toCoordinates: coordinates
+          });
         }
         this.fitMapToMarkers();
       }
@@ -183,6 +332,10 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         y: selectedPoint.y,
         emoji: this.getEmotionEmoji(xPercent, yPercent)
       };
+
+      this.placeForm.patchValue({
+        emotion: this.selectedEmotion
+      });
     });
   }
 
@@ -204,5 +357,120 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       if (y < 0.66) return '🙂'; // Neutral stress and satisfied
       return '😅'; // Very stressed but satisfied
     }
+  }
+
+  private endTimeValidator(control: any) {
+    if (!control.value) return null;
+    
+    const startTime = this.placeForm?.get('startTime')?.value;
+    if (!startTime) return null;
+
+    const start = new Date(`2000-01-01T${startTime}`);  // this date is arbitrary, we just need a date object
+    const end = new Date(`2000-01-01T${control.value}`); // this date is arbitrary, we just need a date object
+
+    return end <= start ? { endTimeInvalid: true } : null;
+  }
+
+  validateForm(): boolean {
+    this.formErrors = {};
+    
+    if (this.placeForm.get('placeLabel')?.errors?.['required']) {
+      this.formErrors['placeLabel'] = 'Please enter a name for this place';
+    }
+    
+    if (this.placeForm.get('fromAddress')?.errors?.['required']) {
+      this.formErrors['fromAddress'] = 'Please enter a starting location';
+    }
+    
+    if (this.placeForm.get('toAddress')?.errors?.['required']) {
+      this.formErrors['toAddress'] = 'Please enter a destination';
+    }
+    
+    if (this.placeForm.get('fromCoordinates')?.errors?.['required']) {
+      this.formErrors['fromCoordinates'] = 'Please select a valid starting location from the suggestions';
+    }
+    
+    if (this.placeForm.get('toCoordinates')?.errors?.['required']) {
+      this.formErrors['toCoordinates'] = 'Please select a valid destination from the suggestions';
+    }
+    
+    if (this.placeForm.get('date')?.errors?.['required']) {
+      this.formErrors['date'] = 'Please select a date';
+    }
+    
+    if (this.placeForm.get('startTime')?.errors?.['required']) {
+      this.formErrors['startTime'] = 'Please select a start time';
+    }
+    
+    if (this.placeForm.get('endTime')?.errors?.['required']) {
+      this.formErrors['endTime'] = 'Please select an end time';
+    } else if (this.placeForm.get('endTime')?.errors?.['endTimeInvalid']) {
+      this.formErrors['endTime'] = 'End time must be after start time';
+    }
+    
+    if (this.placeForm.get('activityType')?.errors?.['required']) {
+      this.formErrors['activityType'] = 'Please select an activity type';
+    }
+    
+    if (this.placeForm.get('transportType')?.errors?.['required']) {
+      this.formErrors['transportType'] = 'Please select a transport type';
+    }
+
+    return Object.keys(this.formErrors).length === 0;
+  }
+
+  onSubmit(): void {
+    this.formSubmitted = true;
+    
+    if (!this.validateForm()) {
+      // Scroll to the first error
+      const firstError = Object.keys(this.formErrors)[0];
+      const element = document.querySelector(`[data-field="${firstError}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    if (this.placeForm.valid) {
+      const formData: PlaceFormData = this.placeForm.value;
+      
+      if (this.isEditMode) {
+        // Update existing place
+        this.placesService.updatePlace(this.originalDate!, {
+          ...formData,
+          id: this.route.snapshot.queryParams['placeId'],
+          emotion: formData.emotion || undefined
+        });
+      } else {
+        // Add new place
+        this.placesService.addPlace({
+          ...formData,
+          id: '', // Will be generated by the service
+          emotion: formData.emotion || undefined
+        });
+      }
+
+      // Navigate back to journey planner
+      this.router.navigate(['/journey-planner']);
+    }
+  }
+
+  onCancel(): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Cancel Place Entry',
+        message: 'Are you sure you want to cancel? Any unsaved changes will be lost.',
+        confirmText: 'Yes, Cancel',
+        cancelText: 'No, Continue Editing',
+        isDestructive: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.router.navigate(['/journey-planner']);
+      }
+    });
   }
 }

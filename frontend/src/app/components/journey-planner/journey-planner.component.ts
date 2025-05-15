@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, CUSTOM_ELEMENTS_SCHEMA, NgZone } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, CUSTOM_ELEMENTS_SCHEMA, NgZone, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
@@ -10,13 +10,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-interface Place {
-  id: number;
-  name: string;
-  address: string;
-  zipCode: string;
-}
+import { PlacesService, Place } from '../../services/places.service';
+import { Subscription } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-journey-planner',
@@ -28,36 +25,69 @@ interface Place {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    FormsModule
+    FormsModule,
+    MatDialogModule
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './journey-planner.component.html',
   styleUrl: './journey-planner.component.scss'
 })
-export class JourneyPlannerComponent implements OnInit, OnDestroy {
+export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef;
   @ViewChild('picker') datePicker: any;
   @ViewChild('addDateBtn') addDateBtn!: ElementRef;
   @ViewChild('dateSelector') dateSelector!: ElementRef;
   
   map!: mapboxgl.Map;
-  places: Place[] = [
-    { id: 1, name: 'Home', address: '1234 Main St.', zipCode: '11111' },
-    { id: 2, name: 'School', address: '1234 Main St.', zipCode: '11111' },
-    { id: 3, name: 'Pharmacy', address: '1234 Main St.', zipCode: '22222' },
-    { id: 4, name: 'Grocery', address: '1234 Main St.', zipCode: '33333' }
-  ];
+  places: Place[] = [];
   journeyDates: string[] = [];
   pickerDate: Date | null = null;
   activeDate: string | null = null;
-  initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914];
+  selectedPlace: Place | null = null;
+  initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914]; // UIC Innovation Center Coordinates
   private observer: MutationObserver | null = null;
+  private subscription: Subscription | null = null;
+  private toMarkers: mapboxgl.Marker[] = [];
+  private markerAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  constructor(private ngZone: NgZone, private router: Router) {}
+  constructor(
+    private ngZone: NgZone, 
+    private router: Router,
+    private placesService: PlacesService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     mapboxgl.accessToken = environment.mapboxToken;
     this.setupDatePickerObserver();
+
+    // Subscribe to selected date changes
+    this.subscription = this.placesService.selectedDate$.subscribe(date => {
+      if (date) {
+        this.activeDate = date;
+      } else {
+        const allDates = this.placesService.getAllDates();
+        if (allDates.length > 0) {
+          this.activeDate = allDates[allDates.length - 1];
+        } else {
+          this.activeDate = null;
+        }
+      }
+      if (this.activeDate) {
+        this.places = this.placesService.getPlacesByDate(this.activeDate);
+        // Wait for the DOM to update before scrolling and rendering markers
+        setTimeout(() => {
+          this.scrollToActiveDate();
+          this.renderToMarkers();
+        }, 0);
+      } else {
+        this.places = [];
+        this.renderToMarkers();
+      }
+    });
+
+    // Initialize dates
+    this.journeyDates = this.placesService.getAllDates();
   }
 
   ngAfterViewInit(): void {
@@ -71,6 +101,22 @@ export class JourneyPlannerComponent implements OnInit, OnDestroy {
     if (this.observer) {
       this.observer.disconnect();
     }
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+    this.removeToMarkers();
+  }
+
+  initializeMap(): void {
+    this.map = new mapboxgl.Map({
+      container: this.mapContainer.nativeElement,
+      style: 'mapbox://styles/mapbox/navigation-night-v1',
+      center: this.initialCoordinates,
+      zoom: 13
+    });
+    this.map.on('load', () => {
+      this.renderToMarkers();
+    });
   }
 
   private setupDatePickerObserver(): void {
@@ -100,42 +146,38 @@ export class JourneyPlannerComponent implements OnInit, OnDestroy {
     element.style.left = `${buttonRect.left}px`;
   }
 
-  private initializeMap(): void {
-    this.map = new mapboxgl.Map({
-      container: this.mapContainer.nativeElement,
-      style: 'mapbox://styles/mapbox/navigation-night-v1',
-      center: this.initialCoordinates,
-      zoom: 13
-    });
-  }
-
   openDatePicker(event: MouseEvent): void {
     this.datePicker.open();
   }
 
   onDateSelected(event: any): void {
     if (event && event.value instanceof Date) {
-      this.pickerDate = event.value;
-    }
-  }
-
-  onDatePickerClosed(): void {
-    if (this.pickerDate) {
-      const formattedDate = this.pickerDate.toLocaleDateString();
-      if (!this.journeyDates.includes(formattedDate)) {
-        this.journeyDates.push(formattedDate);
-        // Sort dates chronologically
-        this.journeyDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+      const selectedDate = event.value.toISOString().split('T')[0];
+      if (!this.journeyDates.includes(selectedDate)) {
+        this.journeyDates.push(selectedDate);
+        this.journeyDates.sort();
       }
-      this.setActiveDate(formattedDate);
+      this.placesService.setSelectedDate(selectedDate);
+      this.placesService.addDate(selectedDate);
       this.pickerDate = null;
     }
   }
 
+  onDatePickerClosed(): void {
+    // Reset pickerDate when the date picker is closed
+    this.pickerDate = null;
+  }
+
   setActiveDate(date: string): void {
-    this.activeDate = date;
+    this.placesService.setSelectedDate(date);
+    this.selectedPlace = null; // Reset selected place when changing dates
     // Wait for the DOM to update
     setTimeout(() => this.scrollToActiveDate(), 0);
+  }
+
+  selectPlace(place: Place): void {
+    this.selectedPlace = this.selectedPlace === place ? null : place;
+    this.highlightSelectedMarker();
   }
 
   private scrollToActiveDate(): void {
@@ -155,7 +197,132 @@ export class JourneyPlannerComponent implements OnInit, OnDestroy {
     }
   }
 
-  addCard() {
-    this.router.navigate(['/add']);
+  addPlace(): void {
+    if (this.activeDate) {
+      this.router.navigate(['/place-editor'], {
+        queryParams: { 
+          date: this.activeDate,
+          mode: 'add'
+        }
+      });
+    }
+  }
+
+  editCard(): void {
+    if (this.activeDate && this.selectedPlace) {
+      this.router.navigate(['/place-editor'], {
+        queryParams: { 
+          date: this.activeDate,
+          placeId: this.selectedPlace.id,
+          mode: 'edit'
+        }
+      });
+    }
+  }
+
+  removeCard(): void {
+    if (this.activeDate && this.selectedPlace) {
+      const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+        data: {
+          title: 'Remove Place',
+          message: 'Are you sure you want to remove this place?',
+          confirmText: 'Yes, Remove',
+          cancelText: 'No, Keep',
+          isDestructive: true
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.placesService.removePlace(this.activeDate!, this.selectedPlace!.id);
+          this.selectedPlace = null;
+          this.places = this.placesService.getPlacesByDate(this.activeDate!);
+        }
+      });
+    }
+  }
+
+  isEditRemoveDisabled(): boolean {
+    return !this.selectedPlace;
+  }
+
+  onSubmit(): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Submit Journey',
+        message: 'Are you sure you want to submit?',
+        confirmText: 'Yes, Submit',
+        cancelText: 'No, Keep Editing',
+        isDestructive: false
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.resetApplication();
+      }
+    });
+  }
+
+  private resetApplication(): void {
+    // Clear all places and dates
+    this.placesService.clearAllData();
+    
+    // Reset component state
+    this.places = [];
+    this.journeyDates = [];
+    this.activeDate = null;
+    this.selectedPlace = null;
+    this.pickerDate = null;
+
+    // Reset map view
+    if (this.map) {
+      this.map.setCenter(this.initialCoordinates);
+      this.map.setZoom(13);
+    }
+  }
+
+  private renderToMarkers(): void {
+    if (!this.map) return;
+    this.removeToMarkers();
+    if (!this.places || this.places.length === 0) return;
+    let bounds: mapboxgl.LngLatBounds | null = null;
+    this.places.forEach((place, idx) => {
+      if (place.toCoordinates && Array.isArray(place.toCoordinates) && place.toCoordinates.length === 2) {
+        const el = document.createElement('div');
+        el.className = 'custom-marker to-marker';
+        el.innerHTML = this.markerAlphabet[idx % this.markerAlphabet.length];
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat(place.toCoordinates)
+          .addTo(this.map);
+        this.toMarkers.push(marker);
+        if (!bounds) {
+          bounds = new mapboxgl.LngLatBounds(place.toCoordinates, place.toCoordinates);
+        } else {
+          bounds.extend(place.toCoordinates);
+        }
+      }
+    });
+    if (bounds && this.toMarkers.length > 0) {
+      this.map.fitBounds(bounds, { padding: 100, maxZoom: 15 });
+    }
+    this.highlightSelectedMarker();
+  }
+
+  private removeToMarkers(): void {
+    this.toMarkers.forEach(marker => marker.remove());
+    this.toMarkers = [];
+  }
+
+  private highlightSelectedMarker(): void {
+    this.toMarkers.forEach((marker, idx) => {
+      const el = marker.getElement();
+      if (!el) return;
+      if (this.selectedPlace && this.places[idx] === this.selectedPlace) {
+        el.classList.add('selected-marker');
+      } else {
+        el.classList.remove('selected-marker');
+      }
+    });
   }
 }
