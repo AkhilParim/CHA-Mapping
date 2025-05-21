@@ -1,0 +1,57 @@
+<div class="summary-container" @fadeIn>
+  <div class="summary-header">
+    <h2>Summary</h2>
+    <p class="subtitle">Your visits includes {{totalPlaces}} places across {{journeyDates.length}} days.</p>
+  </div>
+
+  <div class="summary-content" @slideIn>
+    <div *ngFor="let date of journeyDates" class="date-section">
+      <div class="date-header">{{date}}</div>
+      <div class="date-places">
+        <div *ngFor="let place of placesByDate.get(date); let i = index" class="place-card">
+          <div class="place-number">{{i+1}}</div>
+          <div class="place-content">
+            <div class="place-title">
+              <span class="activity-type">{{place.activityType}}</span>
+              <span>{{place.placeLabel || ''}}</span>
+            </div>
+            <div class="place-time">
+              {{formatTime(place.startTime)}} - {{formatTime(place.endTime)}}
+            </div>
+            <div class="place-details">
+              <div class="detail-row">
+                <span class="detail-label">From:</span>
+                <span>{{place.fromAddress}}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">To:</span>
+                <span>{{place.toAddress}}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Transportation:</span>
+                <span>{{place.transportType}}</span>
+              </div>
+              <div *ngIf="place.emotion" class="detail-row">
+                <span class="detail-label">Feeling:</span>
+                <span>{{place.emotion.emoji}}</span>
+              </div>
+              <div *ngIf="place.comments" class="detail-row comments">
+                <span class="detail-label">Comments:</span>
+                <span>{{place.comments}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-actions">
+    <button mat-button (click)="onCancel()" class="cancel-btn">
+      Back to Editing
+    </button>
+    <button mat-flat-button color="primary" (click)="onSubmit()" class="submit-btn">
+      Submit
+    </button>
+  </div>
+</div> 

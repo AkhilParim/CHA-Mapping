@@ -1,0 +1,173 @@
+.summary-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  width: 650px;
+  max-width: 95vw;
+  padding: 24px;
+  overflow: hidden;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  .summary-header {
+    margin-bottom: 24px;
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #64748b;
+    }
+  }
+
+  .summary-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding-right: 12px;
+    margin-bottom: 24px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .date-section {
+      margin-bottom: 24px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .date-header {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0f172a;
+        background-color: #f1f5f9;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+      }
+
+      .date-places {
+        .place-card {
+          display: flex;
+          background-color: white;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          border: 1px solid #f1f5f9;
+
+          .place-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            flex-shrink: 0; /* Prevent number from shrinking */
+            background-color: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 18px;
+            font-weight: 600;
+            margin-right: 16px;
+            font-size: 14px;
+          }
+
+          .place-content {
+            flex: 1;
+            min-width: 0; /* Allow content to shrink below its natural width */
+            overflow-wrap: break-word; /* Break long words */
+            word-wrap: break-word; /* Legacy support */
+
+            .place-title {
+              display: flex;
+              align-items: center;
+              margin-bottom: 8px;
+              flex-wrap: wrap; /* Allow wrapping of title elements */
+              
+              .activity-type {
+                margin-right: 8px;
+                color: #4f46e5;
+                font-weight: 600;
+              }
+            }
+
+            .place-time {
+              font-size: 14px;
+              color: #64748b;
+              margin-bottom: 16px;
+              font-weight: 500;
+            }
+
+            .place-details {
+              .detail-row {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: 12px;
+                font-size: 14px;
+                color: #475569;
+                line-height: 1.4;
+                flex-wrap: wrap; /* Allow wrapping of long content */
+
+                &:last-child {
+                  margin-bottom: 0;
+                }
+
+                .detail-label {
+                  min-width: 120px;
+                  flex-shrink: 0; /* Prevent label from shrinking */
+                  color: #64748b;
+                  font-weight: 500;
+                  margin-right: 4px;
+                }
+
+                &.comments {
+                  margin-top: 8px;
+                  padding-top: 8px;
+                  border-top: 1px solid #f1f5f9;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .summary-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: auto;
+    padding-top: 16px; /* Add padding to separate from content */
+    border-top: 1px solid #f1f5f9; /* Add subtle separator */
+
+    .cancel-btn {
+      color: #40464e;
+      background-color: #f1f5f9;
+      min-width: 120px; /* Make buttons more consistent in size */
+    }
+
+    .submit-btn {
+      min-width: 120px;
+      background-color: #4f46e5;
+    }
+  }
+} 
