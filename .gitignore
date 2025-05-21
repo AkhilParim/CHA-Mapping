@@ -1,2 +1,6 @@
 # Environment variables
 .env
+venv/
+transform_geojson/data
+
+.DS_Store

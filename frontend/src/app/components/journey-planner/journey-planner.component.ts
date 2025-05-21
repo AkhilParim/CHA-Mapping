@@ -14,6 +14,7 @@ import { PlacesService, Place } from '../../services/places.service';
 import { Subscription } from 'rxjs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../components/confirmation-dialog/confirmation-dialog.component';
+import { SummaryComponent } from '../../components/summary/summary.component';
 
 @Component({
   selector: 'app-journey-planner',
@@ -246,14 +247,42 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
     return !this.selectedPlace;
   }
 
-  onSubmit(): void {
+  onCancel(): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       data: {
-        title: 'Submit Journey',
-        message: 'Are you sure you want to submit?',
-        confirmText: 'Yes, Submit',
+        title: 'Cancel Activity',
+        message: 'Are you sure you want to cancel this activity?',
+        confirmText: 'Yes, Cancel',
         cancelText: 'No, Keep Editing',
-        isDestructive: false
+        isDestructive: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.resetApplication();
+      }
+    });
+  }
+
+  onSubmit(): void {
+    // Open the summary dialog instead of confirmation dialog
+    const journeyDates = this.placesService.getAllDates();
+    
+    // Create a Map of places by date to pass to the summary component
+    const placesByDate = new Map<string, Place[]>();
+    journeyDates.forEach(date => {
+      if (this.placesService.getPlacesByDate(date).length > 0) {
+        placesByDate.set(date, this.placesService.getPlacesByDate(date));
+      }
+    });
+    
+    const dialogRef = this.dialog.open(SummaryComponent, {
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: {
+        journeyDates: Array.from(placesByDate.keys()),
+        placesByDate
       }
     });
 

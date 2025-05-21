@@ -380,7 +380,7 @@
     button {
         padding: 12px 32px;
         border: none;
-        border-radius: 12px;
+        border-radius: 6px;
         cursor: pointer;
         font-weight: 600;
         transition: all 0.2s ease;
@@ -403,7 +403,7 @@
         }
         
         &.submit-btn {
-            background-color: #4c6ef5;
+            background-color: #4f46e5;
             color: white;
             box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
             
