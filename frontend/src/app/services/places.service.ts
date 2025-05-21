@@ -28,82 +28,36 @@ export class PlacesService {
   private placesMap = new Map<string, Place[]>();
   private selectedDateSubject = new BehaviorSubject<string | null>(null);
   selectedDate$ = this.selectedDateSubject.asObservable();
+  private readonly STORAGE_KEY = 'cha-mapping-places';
 
   constructor() {
-//     this.placesMap.set('2025-05-01', [{
-//         "fromAddress": "2222 West Taylor Street, Chicago, Illinois 60612, United States",
-//         "toAddress": "1240 W Harrison St, Chicago, Illinois 60607, United States",
-//         "placeLabel": "First Place",
-//         "fromCoordinates": [
-//             -87.682169,
-//             41.869197
-//         ],
-//         "toCoordinates": [
-//             -87.65873046,
-//             41.87448231
-//         ],
-//         "date": "2025-05-21",
-//         "startTime": "22:52",
-//         "endTime": "22:52",
-//         "activityType": "School",
-//         "transportType": "Bus",
-//         "comments": "comment",
-//         "emotion": {
-//             "x": 605.203125,
-//             "y": 99,
-//             "emoji": "🤔"
-//         },
-//         "id": "ma677xwbd4fy0hmpenw"
-//     }, {
-//       "fromAddress": "801 S Paulina St, Chicago, Illinois 60612, United States",
-//       "toAddress": "2222 West Taylor Street, Chicago, Illinois 60612, United States",
-//       "fromCoordinates": [
-//           -87.66855458,
-//           41.8712151
-//       ],
-//       "toCoordinates": [
-//           -87.682169,
-//           41.869197
-//       ],
-//       "date": "2025-05-01",
-//       "startTime": "16:31",
-//       "endTime": "16:41",
-//       "activityType": "Home",
-//       "transportType": "Bus",
-//       "placeLabel": "sweet home",
-//       "comments": "",
-//       "emotion": {
-//           "x": 737.6015625,
-//           "y": 142,
-//           "emoji": "🙂"
-//       },
-//       "id": "mafxfuyif7wx55y96v"
-//   }]);
-//   this.placesMap.set('2025-05-02', [{
-//     "fromAddress": "801 S Paulina St, Chicago, Illinois 60612, United States",
-//     "toAddress": "2222 West Taylor Street, Chicago, Illinois 60612, United States",
-//     "fromCoordinates": [
-//         -87.66855458,
-//         41.8712151
-//     ],
-//     "toCoordinates": [
-//         -87.682169,
-//         41.869197
-//     ],
-//     "date": "2025-05-15",
-//     "startTime": "04:02",
-//     "endTime": "12:02",
-//     "activityType": "School",
-//     "transportType": "Bus",
-//     "placeLabel": "fdfds",
-//     "comments": "",
-//     "emotion": {
-//         "x": 631.6015625,
-//         "y": 243,
-//         "emoji": "😅"
-//     },
-//     "id": "mafyurr09b53wesl7zp"
-// }]);
+    this.loadFromLocalStorage();
+    // Set the first available date (when sorted) as the selected date
+    const dates = this.getAllDates();
+    if (dates.length > 0) {
+      this.selectedDateSubject.next(dates[0]);
+    }
+  }
+
+  private saveToLocalStorage(): void {
+    try {
+      const placesObject = Object.fromEntries(this.placesMap);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(placesObject));
+    } catch (error) {
+      console.error('Error saving places to localStorage:', error);
+    }
+  }
+
+  private loadFromLocalStorage(): void {
+    try {
+      const placesJson = localStorage.getItem(this.STORAGE_KEY);
+      if (placesJson) {
+        const placesObject = JSON.parse(placesJson);
+        this.placesMap = new Map(Object.entries(placesObject));
+      }
+    } catch (error) {
+      console.error('Error loading places from localStorage:', error);
+    }
   }
 
   setSelectedDate(date: string | null): void {
@@ -115,7 +69,10 @@ export class PlacesService {
   }
 
   addDate(date: string): void {
-    this.placesMap.set(date, []);
+    if (!this.placesMap.has(date)) {
+      this.placesMap.set(date, []);
+      this.saveToLocalStorage();
+    }
   }
 
   addPlace(place: Place): void {
@@ -127,6 +84,7 @@ export class PlacesService {
     console.log(place);
     
     this.placesMap.set(date, places);
+    this.saveToLocalStorage();
   }
 
   getPlacesByDate(date: string): Place[] {
@@ -154,9 +112,11 @@ export class PlacesService {
           if (!place.placeLabel) place.placeLabel = '';
           places[index] = place;
           this.placesMap.set(oldDate, places);
+          this.saveToLocalStorage();
         }
       }
     }
+    console.log('Updated place:', place, this.placesMap);
   }
 
   removePlace(date: string, placeId: string): void {
@@ -170,6 +130,7 @@ export class PlacesService {
         } else {
           this.placesMap.set(date, places);
         }
+        this.saveToLocalStorage();
       }
     }
   }
@@ -177,6 +138,7 @@ export class PlacesService {
   clearAllData(): void {
     this.placesMap.clear();
     this.selectedDateSubject.next(null);
+    localStorage.removeItem(this.STORAGE_KEY);
   }
 
   private generateId(): string {

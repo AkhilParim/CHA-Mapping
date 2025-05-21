@@ -58,10 +58,10 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   activityTypes = [
     'Home',
+    'Healthcare',
+    'Pharmacy',
     'Grocery',
-    'School',
-    'Friend/Neighbor',
-    'Family/Relative',
+    'Wellness',
     'Other'
   ];
 
