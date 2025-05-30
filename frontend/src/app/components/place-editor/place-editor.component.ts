@@ -4,10 +4,14 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
+import { GeoInfoModalComponent } from '../geo-info-modal/geo-info-modal.component';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { PlacesService } from '../../services/places.service';
+import { GeojsonService } from '../../services/geojson.service';
+import { HttpClientModule } from '@angular/common/http';
+import { Collection } from '../../services/geojson.service';
 
 interface EmotionState {
   x: number;
@@ -34,7 +38,8 @@ interface PlaceFormData {
 @Component({
   selector: 'app-place-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule],
+  providers: [GeojsonService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './place-editor.component.html',
   styleUrl: './place-editor.component.scss'
@@ -49,12 +54,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   map!: mapboxgl.Map;
   fromMarker: mapboxgl.Marker | null = null;
   toMarker: mapboxgl.Marker | null = null;
-  initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914]; // Default coordinates to UIC Innovation Center
+  initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914];  // Default coordinates to UIC Innovation Center
   isSearchLoading = true;
   isEditMode = false;
   originalDate: string | null = null;
   formErrors: { [key: string]: string } = {};
   formSubmitted = false;
+  geoProperties: Collection | null = null;
+  showGeoInfo = false;
+  loadedGeoJsonData = false;
+  geoJsonLoadError = false;
 
   activityTypes = [
     'Home',
@@ -82,14 +91,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     public router: Router,
     private placesService: PlacesService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    public geojsonService: GeojsonService
   ) {
     this.initializeForm();
   }
 
   private initializeForm(): void {
-    const today = new Date();
+    this.loadGeoJsonData();
 
+    const today = new Date();
     this.placeForm = this.fb.group({
       fromAddress: ['', Validators.required],
       toAddress: ['', Validators.required],
@@ -161,7 +172,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     mapboxgl.accessToken = environment.mapboxToken;
-    this.loadMapboxSearch();
+    this.loadSearchScripts();
   }
 
   ngAfterViewInit(): void {
@@ -185,7 +196,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  loadMapboxSearch(): void {
+  loadSearchScripts(): void {
     const script = document.createElement('script');
     script.id = 'search-js';
     script.defer = true;
@@ -202,6 +213,25 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       style: 'mapbox://styles/mapbox/navigation-night-v1',
       center: this.initialCoordinates,
       zoom: 13
+    });
+  }
+
+  // Load GeoJSON data and initialize spatial querying functionality
+  loadGeoJsonData(): void {
+    this.geojsonService.loadGeoJson().subscribe({
+      next: (geojsonData) => {
+        const toCoordinates = this.placeForm.get('toCoordinates')?.value;
+        if (toCoordinates) {
+          this.geoProperties = this.geojsonService.getPropertiesAtPoint(toCoordinates[0], toCoordinates[1]);
+        }
+        this.loadedGeoJsonData = true;
+        this.geoJsonLoadError = false;
+      },
+      error: (error) => {
+        this.loadedGeoJsonData = true;
+        this.geoJsonLoadError = true;
+        console.error('Error loading GeoJSON data:', error);
+      }
     });
   }
 
@@ -231,11 +261,25 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.map.fitBounds(bounds, {
       padding: 100, // Add some padding around the markers
-      maxZoom: 15   // Limit maximum zoom level  // TODO: Might need to remove the maxZoom
+      maxZoom: 15   // Limit maximum zoom level
     });
   }
 
-  private initializeMapboxSearchBox(
+  initializeSearchBox(): void {
+    if (this.fromAddressSearch?.nativeElement && this.toAddressSearch?.nativeElement) {
+      if (customElements.get('mapbox-search-box')) {
+        // Initialize both search boxes
+        this.initializeSearchListener(this.fromAddressSearch.nativeElement, true);
+        this.initializeSearchListener(this.toAddressSearch.nativeElement, false);
+        this.isSearchLoading = false;
+      } else {
+        // If the custom element is not yet defined, wait a bit and try again
+        setTimeout(() => this.initializeSearchBox(), 100);
+      }
+    }
+  }
+
+  private initializeSearchListener(
     searchBox: any,
     isFromAddress: boolean
   ): void {
@@ -276,6 +320,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         } else {
           this.toMarker = this.createMarker(coordinates, false);
+          this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
           this.placeForm.patchValue({
             toAddress: address,
             toCoordinates: coordinates
@@ -284,20 +329,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fitMapToMarkers();
       }
     });
-  }
-
-  initializeSearchBox(): void {
-    if (this.fromAddressSearch?.nativeElement && this.toAddressSearch?.nativeElement) {
-      if (customElements.get('mapbox-search-box')) {
-        // Initialize both search boxes
-        this.initializeMapboxSearchBox(this.fromAddressSearch.nativeElement, true);
-        this.initializeMapboxSearchBox(this.toAddressSearch.nativeElement, false);
-        this.isSearchLoading = false;
-      } else {
-        // If the custom element is not yet defined, wait a bit and try again
-        setTimeout(() => this.initializeSearchBox(), 100);
-      }
-    }
   }
 
   private initializeEmotionGrid(): void {
@@ -433,26 +464,28 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.placeForm.valid) {
-      const formData: PlaceFormData = this.placeForm.value;
-      
-      if (this.isEditMode) {
-        // Update existing place
-        this.placesService.updatePlace(this.originalDate!, {
-          ...formData,
-          id: this.route.snapshot.queryParams['placeId'],
-          emotion: formData.emotion || undefined
-        });
-      } else {
-        // Add new place
-        this.placesService.addPlace({
-          ...formData,
-          id: '', // Will be generated by the service
-          emotion: formData.emotion || undefined
-        });
-      }
+      setTimeout(() => {
+        const formData: PlaceFormData = this.placeForm.value;
+        
+        if (this.isEditMode) {
+          // Update existing place
+          this.placesService.updatePlace(this.originalDate!, {
+            ...formData,
+            id: this.route.snapshot.queryParams['placeId'],
+            emotion: formData.emotion || undefined
+          });
+        } else {
+          // Add new place
+          this.placesService.addPlace({
+            ...formData,
+            id: '', // Will be generated by the service
+            emotion: formData.emotion || undefined
+          });
+        }
 
-      // Navigate back to journey planner
-      this.router.navigate(['/journey-planner']);
+        // Navigate back to journey planner
+        this.router.navigate(['/journey-planner']);
+      }, 0)
     }
   }
 
@@ -471,6 +504,157 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       if (result) {
         this.router.navigate(['/journey-planner']);
       }
+    });
+  }
+
+  toggleShowGeoInfo(): void {
+    this.showGeoInfo = !this.showGeoInfo;
+  }
+
+  getVisualizationData(type: string): { 
+    barNumber: number | null, 
+    leftLabel: string, 
+    rightLabel: string,
+    hasData: boolean 
+  } {
+    if (!this.geoProperties || !this.geojsonService.averages) {
+      return { 
+        barNumber: null, 
+        leftLabel: '', 
+        rightLabel: '', 
+        hasData: false 
+      };
+    }
+
+    let value: number | null = null;
+    let lowest: number | null = null;
+    let highest: number | null = null;
+    let leftLabel = '';
+    let rightLabel = '';
+
+    if (type === 'NDI') {
+      value = this.geoProperties['NDI_202_Trt_IL_only']?.['NDI'] || null;
+      lowest = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['lowest_NDI'] || null;
+      highest = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['highest_NDI'] || null;
+      leftLabel = 'Challenged community';
+      rightLabel = 'Thriving community';
+    } else if (type === 'tes') {
+      value = this.geoProperties['IL_TES_BG']?.['tes'] || null;
+      lowest = this.geojsonService.averages['IL_TES_BG']?.['lowest_tes'] || null;
+      highest = this.geojsonService.averages['IL_TES_BG']?.['highest_tes'] || null;
+      leftLabel = 'Needs more trees';
+      rightLabel = 'Most trees';
+    } else if (type === 'MHLTH_CrudePrev') {
+      value = this.geoProperties['IL_PLACES_MHLTH_TRACT']?.['MHLTH_CrudePrev'] || null;
+      lowest = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['lowest_MHLTH_CrudePrev'] || null;
+      highest = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['highest_MHLTH_CrudePrev'] || null;
+      leftLabel = 'Stressful vibes';
+      rightLabel = 'Good vibes';
+    }
+
+    if (value === null || lowest === null || highest === null) {
+      return { 
+        barNumber: null, 
+        leftLabel, 
+        rightLabel, 
+        hasData: false 
+      };
+    }
+
+    // Use the extracted calculation method
+    const barNumber = this.calculateBarPosition(value, lowest, highest);
+
+    return { 
+      barNumber, 
+      leftLabel, 
+      rightLabel, 
+      hasData: true 
+    };
+  }
+
+  /**
+   * Calculates the bar position (1-3) based on value within a range
+   * This is the single source of truth for bar position calculation
+   */
+  private calculateBarPosition(value: number, lowest: number, highest: number): number {
+    const range = highest - lowest;
+    const segmentSize = range / 3;
+    const relativePosition = value - lowest;
+    return Math.min(Math.floor(relativePosition / segmentSize) + 1, 3);
+  }
+
+  openGeoInfoModal(id: string): void {
+    // Define descriptions based on the data type
+    const descriptions: Record<string, string> = {
+      'NDI': `The Neighborhood Deprivation Index (NDI) measures how disadvantaged a
+neighborhood is, considering community factors that impact health and well-being.`,
+      'tes': `Tree Equity Score is a metric that helps cities assess how well they are delivering
+equitable tree canopy cover to all residents. It is derived from tree canopy cover,
+climate, demographic and socioeconomic data. Scores range from 0-100. The lower the
+score, the greater priority for tree planting. A score of 100 means the neighborhood has
+met tree planting goals.`,
+      'MHLTH_CrudePrev': `CDC PLACES Data detailing the estimated prevalence among adults aged ≥ 18 years
+who report that their mental health (including stress, depression, and problems with
+emotions) was not good for 14 or more days during the past 30 days.`
+    };
+
+    // Get the visualization data (including pre-calculated bar number and labels)
+    const vizData = this.getVisualizationData(id);
+
+    // Using a generic Record type for modalData to allow for additional properties
+    let modalData: Record<string, any> = {
+      id: id,
+      description: descriptions[id] || 'No additional information available for this metric.',
+      type: id,
+      barNumber: vizData.barNumber, // Pass the pre-calculated bar number
+      leftLabel: vizData.leftLabel,   // Pass the dynamic left label
+      rightLabel: vizData.rightLabel,  // Pass the dynamic right label
+      hasData: vizData.hasData
+    };
+
+    // Add specific data for NDI visualization
+    if (id === 'NDI' && this.geoProperties && this.geojsonService.averages) {
+      modalData = {
+        ...modalData,
+        label: 'Community Conditions',
+        value: this.geoProperties['NDI_202_Trt_IL_only']['NDI'],
+        lowest: this.geojsonService.averages['NDI_202_Trt_IL_only']['lowest_NDI'],
+        highest: this.geojsonService.averages['NDI_202_Trt_IL_only']['highest_NDI']
+      };
+    }
+    
+    // Add specific data for TES visualization
+    else if (id === 'tes' && this.geoProperties && this.geojsonService.averages) {
+      modalData = {
+        ...modalData,
+        label: 'Neighborhood Greenness',
+        value: this.geoProperties['IL_TES_BG']['tes'],
+        lowest: this.geojsonService.averages['IL_TES_BG']['lowest_tes'],
+        highest: this.geojsonService.averages['IL_TES_BG']['highest_tes']
+      };
+    }
+    
+    // Add specific data for MHLTH_CrudePrev visualization
+    else if (id === 'MHLTH_CrudePrev' && this.geoProperties && this.geojsonService.averages) {
+      modalData = {
+        ...modalData,
+        label: 'Mental Wellbeing',
+        value: this.geoProperties['IL_PLACES_MHLTH_TRACT']['MHLTH_CrudePrev'],
+        lowest: this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']['lowest_MHLTH_CrudePrev'],
+        highest: this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']['highest_MHLTH_CrudePrev']
+      };
+    }
+
+    this.dialog.open(GeoInfoModalComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'geo-info-modal-panel',
+      autoFocus: false,
+      restoreFocus: true,
+      enterAnimationDuration: '300ms',
+      exitAnimationDuration: '200ms',
+      data: modalData
     });
   }
 }

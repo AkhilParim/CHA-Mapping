@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "lint": "ng lint"
   },
   "private": true,
   "dependencies": {
@@ -21,6 +22,7 @@
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
     "@mapbox/search-js-web": "^1.0.0",
+    "@turf/turf": "^7.2.0",
     "mapbox-gl": "^3.11.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -33,8 +35,10 @@
     "@angular/compiler-cli": "^18.2.0",
     "@types/jasmine": "~5.1.0",
     "@types/mapbox-gl": "^2.7.21",
+    "angular-eslint": "19.4.0",
     "css-loader": "^7.1.2",
     "dotenv": "^16.5.0",
+    "eslint": "^9.26.0",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -42,6 +46,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "style-loader": "^4.0.0",
-    "typescript": "~5.5.2"
+    "typescript": "~5.5.2",
+    "typescript-eslint": "8.32.0"
   }
 }

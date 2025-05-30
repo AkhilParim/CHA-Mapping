@@ -55,3 +55,16 @@ p {
 .mat-mdc-form-field {
     width: 100%;
 }
+
+/* Geo Info Modal Panel */
+.geo-info-modal-panel {
+    .mat-mdc-dialog-container {
+        padding: 0 !important;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .mdc-dialog__surface {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18) !important;
+    }
+}

@@ -1,0 +1,58 @@
+<div class="geo-info-modal">
+  <div class="modal-header">
+    <h2>{{data.label}}</h2>
+    <button mat-icon-button (click)="onClose()" class="close-button">
+      <mat-icon>x</mat-icon>
+    </button>
+  </div>
+  
+  <div class="modal-content">
+    <div class="info-section">
+      <div class="info-description">
+        <h3>Description</h3>
+        <p>{{data.description}}</p>
+      </div>
+    </div>
+    
+    <div class="graph-section">
+      <h3>Data Visualization</h3>
+      
+      @if (data.hasData) {
+        <!-- Single Dynamic Visualization -->
+        <div class="visualization">
+          <div class="viz-header">
+            <span class="viz-label left">{{data.leftLabel}}</span>
+            <span class="viz-label right">{{data.rightLabel}}</span>
+          </div>
+          
+          <div class="bars-container" [ngClass]="{
+            'tes-bars': data.type === 'tes',
+            'mhlth-bars': data.type === 'MHLTH_CrudePrev'
+          }">
+            <div class="bar bar-1" [class.selected]="locationBarNumber === 1"></div>
+            <div class="bar bar-2" [class.selected]="locationBarNumber === 2"></div>
+            <div class="bar bar-3" [class.selected]="locationBarNumber === 3"></div>
+            
+            <!-- Your location indicator circle -->
+            <div class="location-marker" *ngIf="locationBarNumber" [style.left]="((locationBarNumber - 0.5) * 33.33) + '%'">
+              <div class="circle"></div>
+              <div class="location-label">Your Location</div>
+            </div>
+          </div>
+          
+          <div class="axis">
+            <div class="arrow left-arrow"></div>
+            <div class="line"></div>
+            <div class="arrow right-arrow"></div>
+          </div>
+        </div>
+      } @else {
+        <p>No data available for this metric.</p>
+      }
+    </div>
+  </div>
+  
+  <div class="modal-footer">
+    <button mat-button (click)="onClose()">Close</button>
+  </div>
+</div>

@@ -1,0 +1,273 @@
+.geo-info-modal {
+  display: flex;
+  flex-direction: column;
+  min-width: 700px;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: modal-fade-in 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .geo-info-modal {
+    min-width: 90vw;
+  }
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #1e293b;
+  color: white;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.modal-header .close-button {
+  margin-right: -12px;
+  color: white;
+}
+
+.modal-content {
+  display: flex;
+  padding: 24px;
+  background-color: #f8fafc;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    flex-direction: column;
+  }
+}
+
+.info-section {
+  flex: 1;
+  padding-right: 24px;
+  border-right: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .info-section {
+    padding-right: 0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+.info-section h3 {
+  color: #334155;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.info-description p {
+  margin: 0;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.graph-section {
+  flex: 1;
+  padding-left: 24px;
+}
+
+@media (max-width: 768px) {
+  .graph-section {
+    padding-left: 0;
+  }
+}
+
+.graph-section h3 {
+  color: #334155;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.visualization {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.viz-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.viz-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.viz-label.left {
+  text-align: left;
+}
+
+.viz-label.right {
+  text-align: right;
+}
+
+.bars-container {
+  display: flex;
+  height: 100px;
+  width: 100%;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.bar {
+  flex: 1;
+  height: 100%;
+  margin: 0 4px;
+  border-radius: 4px;
+}
+
+.bar.selected {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* Location marker (white circle on the bar) */
+.location-marker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+}
+
+.location-marker .circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  border: 2px solid #333;
+  transform: translate(-50%, -50%);
+}
+
+.location-marker .location-label {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  white-space: nowrap;
+  color: #3B82F6;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+/* Axis styles */
+.axis {
+  position: relative;
+  height: 20px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.axis .line {
+  height: 3px;
+  background-color: #64748b;
+  flex-grow: 1;
+}
+
+.axis .arrow {
+  width: 18px;
+  height: 18px;
+  background-color: #64748b;
+  clip-path: polygon(0% 50%, 100% 0%, 100% 100%);
+}
+
+.axis .left-arrow {
+  transform: rotate(180deg);
+  margin-right: 2px;
+}
+
+.axis .right-arrow {
+  margin-left: 2px;
+}
+
+/* Default NDI colors - updated to purple gradient (3 bars) */
+.bar.bar-1 {
+  background-color: #F5F3FF;
+}
+
+.bar.bar-2 {
+  background-color: #A78BFA;
+}
+
+.bar.bar-3 {
+  background-color: #5B21B6;
+}
+
+/* TES Colors (green gradient - 3 bars) */
+.tes-bars .bar.bar-1 {
+  background-color: #DCFCE7;
+}
+
+.tes-bars .bar.bar-2 {
+  background-color: #6EE7B7;
+}
+
+.tes-bars .bar.bar-3 {
+  background-color: #10B981;
+}
+
+/* MHLTH Colors (blue gradient - 3 bars) */
+.mhlth-bars .bar.bar-1 {
+  background-color: #DBEAFE;
+}
+
+.mhlth-bars .bar.bar-2 {
+  background-color: #60A5FA;
+}
+
+.mhlth-bars .bar.bar-3 {
+  background-color: #2563EB;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  background-color: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-footer button {
+  min-width: 100px;
+}
+
