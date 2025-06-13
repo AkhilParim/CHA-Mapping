@@ -54,6 +54,28 @@ export class SummaryComponent implements OnInit {
       .reduce((total, places) => total + places.length, 0);
   }
 
+  getVisualizationData(place: Place, type: string): { 
+    barNumber: number | null, 
+    leftLabel: string, 
+    rightLabel: string,
+    hasData: boolean 
+  } {
+    // Use stored visualization data from the place object
+    const storedData = place.geoVisualization?.[type as keyof typeof place.geoVisualization];
+    
+    if (storedData) {
+      return storedData;
+    }
+    
+    // Fallback for places that don't have stored visualization data
+    return { 
+      barNumber: null, 
+      leftLabel: '', 
+      rightLabel: '', 
+      hasData: false 
+    };
+  }
+
   onCancel(): void {
     this.dialogRef.close(false);
   }

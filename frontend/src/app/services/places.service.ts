@@ -19,6 +19,26 @@ export interface Place {
     y: number;
     emoji: string;
   };
+  geoVisualization?: {
+    NDI?: {
+      barNumber: number | null;
+      leftLabel: string;
+      rightLabel: string;
+      hasData: boolean;
+    };
+    tes?: {
+      barNumber: number | null;
+      leftLabel: string;
+      rightLabel: string;
+      hasData: boolean;
+    };
+    MHLTH_CrudePrev?: {
+      barNumber: number | null;
+      leftLabel: string;
+      rightLabel: string;
+      hasData: boolean;
+    };
+  };
 }
 
 @Injectable({

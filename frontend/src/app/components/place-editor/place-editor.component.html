@@ -9,7 +9,7 @@
             <div class="location-section">
                 <div class="address-inputs">
                     <div class="from-address" data-field="fromAddress">
-                        <label>From: </label>
+                        <label>From (A): </label>
                         <div class="search-wrapper">
                             <mapbox-search-box #fromAddressSearch class="search-container" [class.error]="formErrors['fromAddress']"></mapbox-search-box>
                             <div class="search-loader" *ngIf="isSearchLoading">
@@ -21,7 +21,7 @@
                         </div>
                     </div>
                     <div class="to-address" data-field="toAddress">
-                        <label>To: </label>
+                        <label>To (B): </label>
                         <div class="search-wrapper">
                             <mapbox-search-box #toAddressSearch class="search-container" [class.error]="formErrors['toAddress']"></mapbox-search-box>
                             <div class="search-loader" *ngIf="isSearchLoading">
@@ -38,119 +38,171 @@
                 </div>
             </div>
             <div class="geo-info-section">
+                <div class="geo-info-table">
+                    @if (showGeoInfo) {
+                        @if (geoProperties) {
+                            <div class="metrics-container">
+                                <div class="metric-card ndi-card">
+                                    @if (getVisualizationData('NDI').hasData) {
+                                        <div class="compact-visualization ndi-viz">
+                                            <div class="viz-content">
+                                                <span class="compact-label left">{{getVisualizationData('NDI').leftLabel}}</span>
+                                                <div class="compact-bars-container">
+                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('NDI').barNumber === 1"></div>
+                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('NDI').barNumber === 2"></div>
+                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('NDI').barNumber === 3"></div>
+                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('NDI').barNumber" 
+                                                            [style.left]="((getVisualizationData('NDI').barNumber! - 0.5) * 33.33) + '%'">
+                                                        <div class="compact-circle"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="compact-label right">{{getVisualizationData('NDI').rightLabel}}</span>
+                                                <button class="info-button" (click)="openGeoInfoModal('NDI')" type="button" aria-label="More info about Community Conditions">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <path d="M12,16v-4"></path>
+                                                        <path d="M12,8h.01"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    } @else {
+                                        <div class="no-data-message">
+                                            <span class="no-data-text">No data available</span>
+                                            <button class="info-button" (click)="openGeoInfoModal('NDI')" type="button" aria-label="More info about Community Conditions">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <path d="M12,16v-4"></path>
+                                                    <path d="M12,8h.01"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="metric-card tes-card">
+                                    @if (getVisualizationData('tes').hasData) {
+                                        <div class="compact-visualization tes-viz">
+                                            <div class="viz-content">
+                                                <span class="compact-label left">{{getVisualizationData('tes').leftLabel}}</span>
+                                                <div class="compact-bars-container">
+                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('tes').barNumber === 1"></div>
+                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('tes').barNumber === 2"></div>
+                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('tes').barNumber === 3"></div>
+                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('tes').barNumber" 
+                                                            [style.left]="((getVisualizationData('tes').barNumber! - 0.5) * 33.33) + '%'">
+                                                        <div class="compact-circle"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="compact-label right">{{getVisualizationData('tes').rightLabel}}</span>
+                                                <button class="info-button" (click)="openGeoInfoModal('tes')" type="button" aria-label="More info about Neighborhood Greenness">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <path d="M12,16v-4"></path>
+                                                        <path d="M12,8h.01"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    } @else {
+                                        <div class="no-data-message">
+                                            <span class="no-data-text">No data available</span>
+                                            <button class="info-button" (click)="openGeoInfoModal('tes')" type="button" aria-label="More info about Neighborhood Greenness">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <path d="M12,16v-4"></path>
+                                                    <path d="M12,8h.01"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="metric-card mhlth-card">
+                                    @if (getVisualizationData('MHLTH_CrudePrev').hasData) {
+                                        <div class="compact-visualization mhlth-viz">
+                                            <div class="viz-content">
+                                                <span class="compact-label left">{{getVisualizationData('MHLTH_CrudePrev').leftLabel}}</span>
+                                                <div class="compact-bars-container">
+                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 1"></div>
+                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 2"></div>
+                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 3"></div>
+                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('MHLTH_CrudePrev').barNumber" 
+                                                    [style.left]="((getVisualizationData('MHLTH_CrudePrev').barNumber! - 0.5) * 33.33) + '%'">
+                                                        <div class="compact-circle"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="compact-label right">{{getVisualizationData('MHLTH_CrudePrev').rightLabel}}</span>
+                                                <button class="info-button" (click)="openGeoInfoModal('MHLTH_CrudePrev')" type="button" aria-label="More info about Mental Wellbeing">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <path d="M12,16v-4"></path>
+                                                        <path d="M12,8h.01"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    } @else {
+                                        <div class="no-data-message">
+                                            <span class="no-data-text">No data available</span>
+                                            <button class="info-button" (click)="openGeoInfoModal('MHLTH_CrudePrev')" type="button" aria-label="More info about Mental Wellbeing">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <path d="M12,16v-4"></path>
+                                                    <path d="M12,8h.01"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        } @else if (!placeForm.get('toCoordinates')?.value) {
+                            <div class="geo-status-message">
+                                <div class="status-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                </div>
+                                <span>Select a destination to see neighborhood insights</span>
+                            </div>
+                        } @else if (placeForm.get('toCoordinates')?.value && !loadedGeoJsonData) {
+                            <div class="geo-status-message loading">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                                <span>Loading neighborhood insights...</span>
+                            </div>
+                        } @else if (geoJsonLoadError) {
+                            <div class="geo-status-message error">
+                                <div class="status-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <span>Unable to load neighborhood insights</span>
+                            </div>
+                        } @else {
+                            <div class="geo-status-message">
+                                <div class="status-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M8 12h8"></path>
+                                    </svg>
+                                </div>
+                                <span>No neighborhood insights available for this location</span>
+                            </div>
+                        }
+                    }
+                </div>
                 <div class="geo-toggle">
                     <label>Show Geo Info</label>
                     <label class="switch">
                         <input type="checkbox" (change)="toggleShowGeoInfo()" [checked]="showGeoInfo">
                         <span class="slider"></span>
                     </label>
-                </div>
-                <div class="geo-info-table">
-                    <table>
-                        @if (showGeoInfo) {
-                            @if (geoProperties) {
-                                <tr>
-                                    <th>Parameter</th>
-                                    <th>Quick View</th>
-                                    <th>Info</th>
-                                </tr>
-                                <tr>
-                                    <td>Community Conditions</td>
-                                    <td class="quick-viz-cell">
-                                        @if (getVisualizationData('NDI').hasData) {
-                                            <div class="compact-visualization ndi-viz">
-                                                <div class="compact-viz-header">
-                                                    <span class="compact-label left">{{getVisualizationData('NDI').leftLabel}}</span>
-                                                    <span class="compact-label right">{{getVisualizationData('NDI').rightLabel}}</span>
-                                                </div>
-                                                <div class="compact-bars-container">
-                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('NDI').barNumber === 1"></div>
-                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('NDI').barNumber === 2"></div>
-                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('NDI').barNumber === 3"></div>
-                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('NDI').barNumber" 
-                                                         [style.left]="((getVisualizationData('NDI').barNumber! - 0.5) * 33.33) + '%'">
-                                                        <div class="compact-circle"></div>
-                                                        <div class="compact-location-label">Your Location</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        } @else {
-                                            <span class="no-data">No data</span>
-                                        }
-                                    </td>
-                                    <td class="info-link" (click)="openGeoInfoModal('NDI')">Info</td>
-                                </tr>
-                                <tr>
-                                    <td>Neighborhood Greenness</td>
-                                    <td class="quick-viz-cell">
-                                        @if (getVisualizationData('tes').hasData) {
-                                            <div class="compact-visualization tes-viz">
-                                                <div class="compact-viz-header">
-                                                    <span class="compact-label left">{{getVisualizationData('tes').leftLabel}}</span>
-                                                    <span class="compact-label right">{{getVisualizationData('tes').rightLabel}}</span>
-                                                </div>
-                                                <div class="compact-bars-container">
-                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('tes').barNumber === 1"></div>
-                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('tes').barNumber === 2"></div>
-                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('tes').barNumber === 3"></div>
-                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('tes').barNumber" 
-                                                         [style.left]="((getVisualizationData('tes').barNumber! - 0.5) * 33.33) + '%'">
-                                                        <div class="compact-circle"></div>
-                                                        <div class="compact-location-label">Your Location</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        } @else {
-                                            <span class="no-data">No data</span>
-                                        }
-                                    </td>
-                                    <td class="info-link" (click)="openGeoInfoModal('tes')">Info</td>
-                                </tr>
-                                <tr>
-                                    <td>Mental Wellbeing</td>
-                                    <td class="quick-viz-cell">
-                                        @if (getVisualizationData('MHLTH_CrudePrev').hasData) {
-                                            <div class="compact-visualization mhlth-viz">
-                                                <div class="compact-viz-header">
-                                                    <span class="compact-label left">{{getVisualizationData('MHLTH_CrudePrev').leftLabel}}</span>
-                                                    <span class="compact-label right">{{getVisualizationData('MHLTH_CrudePrev').rightLabel}}</span>
-                                                </div>
-                                                <div class="compact-bars-container">
-                                                    <div class="compact-bar bar-1" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 1"></div>
-                                                    <div class="compact-bar bar-2" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 2"></div>
-                                                    <div class="compact-bar bar-3" [class.selected]="getVisualizationData('MHLTH_CrudePrev').barNumber === 3"></div>
-                                                    <div class="compact-location-marker" *ngIf="getVisualizationData('MHLTH_CrudePrev').barNumber" 
-                                                         [style.left]="((getVisualizationData('MHLTH_CrudePrev').barNumber! - 0.5) * 33.33) + '%'">
-                                                        <div class="compact-circle"></div>
-                                                        <div class="compact-location-label">Your Location</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        } @else {
-                                            <span class="no-data">No data</span>
-                                        }
-                                    </td>
-                                    <td class="info-link" (click)="openGeoInfoModal('MHLTH_CrudePrev')">Info</td>
-                                </tr>
-                            } @else if (!placeForm.get('toCoordinates')?.value) {
-                                <tr>
-                                    <td colspan="3">Select a to location to see geo info</td>
-                                </tr>
-                            } @else if (placeForm.get('toCoordinates')?.value && !loadedGeoJsonData) {
-                                <tr>
-                                    <td colspan="3">Loading geo info...</td>
-                                </tr>
-                            } @else if (geoJsonLoadError) {
-                                <tr>
-                                    <td colspan="3">Error loading geo info</td>
-                                </tr>
-                            } @else {
-                                <tr>
-                                    <td colspan="3">No geo info found for this location</td>
-                                </tr>
-                            }
-                        }
-                    </table>
                 </div>
             </div>
         </div>
