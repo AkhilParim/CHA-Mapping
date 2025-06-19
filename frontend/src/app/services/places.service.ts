@@ -5,12 +5,15 @@ export interface Place {
   id: string;
   placeLabel: string;
   fromAddress: string;
-  toAddress: string;
   fromCoordinates: [number, number];
+  leaveTime: string;
+  poiAddress: string;
+  poiCoordinates: [number, number];
+  timeSpentAtPoi: number; // in minutes
+  toAddress: string;
   toCoordinates: [number, number];
+  arriveTime: string;
   date: string;
-  startTime: string;
-  endTime: string;
   activityType: string;
   transportType: string;
   comments: string;

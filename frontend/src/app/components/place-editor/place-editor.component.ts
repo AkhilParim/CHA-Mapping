@@ -23,12 +23,15 @@ interface PlaceFormData {
   id?: string;
   placeLabel: string;
   fromAddress: string;
-  toAddress: string;
   fromCoordinates: [number, number];
+  leaveTime: string;
+  poiAddress: string;
+  poiCoordinates: [number, number];
+  timeSpentAtPoi: number;
+  toAddress: string;
   toCoordinates: [number, number];
+  arriveTime: string;
   date: string;
-  startTime: string;
-  endTime: string;
   activityType: string;
   transportType: string;
   comments: string;
@@ -67,12 +70,14 @@ interface PlaceFormData {
 export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef;
   @ViewChild('fromAddressSearch') fromAddressSearch!: ElementRef;
+  @ViewChild('poiAddressSearch') poiAddressSearch!: ElementRef;
   @ViewChild('toAddressSearch') toAddressSearch!: ElementRef;
   @ViewChild('emotionGrid') emotionGrid!: ElementRef;
 
   placeForm!: FormGroup;
   map!: mapboxgl.Map;
   fromMarker: mapboxgl.Marker | null = null;
+  poiMarker: mapboxgl.Marker | null = null;
   toMarker: mapboxgl.Marker | null = null;
   initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914];  // Default coordinates to UIC Innovation Center
   isSearchLoading = true;
@@ -130,12 +135,15 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const today = new Date();
     this.placeForm = this.fb.group({
       fromAddress: ['', Validators.required],
-      toAddress: ['', Validators.required],
       fromCoordinates: [null, Validators.required],
+      leaveTime: ['', Validators.required],
+      poiAddress: ['', Validators.required],
+      poiCoordinates: [null, Validators.required],
+      timeSpentAtPoi: [0, [Validators.required, Validators.min(1)]],
+      toAddress: ['', Validators.required],
       toCoordinates: [null, Validators.required],
+      arriveTime: ['', Validators.required],
       date: [today.toISOString().split('T')[0], Validators.required],
-      startTime: ['', Validators.required],
-      endTime: ['', [Validators.required, this.endTimeValidator.bind(this)]],
       activityType: ['', Validators.required],
       transportType: ['', Validators.required],
       placeLabel: ['', Validators.required],
@@ -164,12 +172,15 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           this.placeForm.patchValue({
             placeLabel: place.placeLabel || '',
             fromAddress: place.fromAddress,
-            toAddress: place.toAddress,
             fromCoordinates: place.fromCoordinates,
+            leaveTime: place.leaveTime,
+            poiAddress: place.poiAddress,
+            poiCoordinates: place.poiCoordinates,
+            timeSpentAtPoi: place.timeSpentAtPoi,
+            toAddress: place.toAddress,
             toCoordinates: place.toCoordinates,
+            arriveTime: place.arriveTime,
             date: place.date,
-            startTime: place.startTime,
-            endTime: place.endTime,
             activityType: place.activityType,
             transportType: place.transportType,
             comments: place.comments,
@@ -179,17 +190,20 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           // Set up markers after form is initialized
           setTimeout(() => {
             if (place.fromCoordinates) {
-              this.fromMarker = this.createMarker(place.fromCoordinates, true);
+              this.fromMarker = this.createMarker(place.fromCoordinates, 'from');
             }
-            if (place.toCoordinates) {
-              this.toMarker = this.createMarker(place.toCoordinates, false);
+            if (place.poiCoordinates) {
+              this.poiMarker = this.createMarker(place.poiCoordinates, 'poi');
               // Set geo properties for edit mode (visualization calculation will happen after GeoJSON loads)
               if (this.loadedGeoJsonData) {
-                this.geoProperties = this.geojsonService.getPropertiesAtPoint(place.toCoordinates[0], place.toCoordinates[1]);
+                this.geoProperties = this.geojsonService.getPropertiesAtPoint(place.poiCoordinates[0], place.poiCoordinates[1]);
                 this.calculateAllVisualizationData();
               }
             }
-            if (this.fromMarker || this.toMarker) {
+            if (place.toCoordinates) {
+              this.toMarker = this.createMarker(place.toCoordinates, 'to');
+            }
+            if (this.fromMarker || this.poiMarker || this.toMarker) {
               this.fitMapToMarkers();
             }
           });
@@ -223,6 +237,9 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.fromMarker) {
       this.fromMarker.remove();
     }
+    if (this.poiMarker) {
+      this.poiMarker.remove();
+    }
     if (this.toMarker) {
       this.toMarker.remove();
     }
@@ -252,9 +269,9 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   loadGeoJsonData(): void {
     this.geojsonService.loadGeoJson().subscribe({
       next: (geojsonData) => {
-        const toCoordinates = this.placeForm.get('toCoordinates')?.value;
-        if (toCoordinates) {
-          this.geoProperties = this.geojsonService.getPropertiesAtPoint(toCoordinates[0], toCoordinates[1]);
+        const poiCoordinates = this.placeForm.get('poiCoordinates')?.value;
+        if (poiCoordinates) {
+          this.geoProperties = this.geojsonService.getPropertiesAtPoint(poiCoordinates[0], poiCoordinates[1]);
           // Calculate visualization data after GeoJSON data is loaded
           this.calculateAllVisualizationData();
         }
@@ -269,10 +286,21 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  createMarker(coordinates: [number, number], isFromMarker: boolean): mapboxgl.Marker {
+  createMarker(coordinates: [number, number], markerType: 'from' | 'poi' | 'to'): mapboxgl.Marker {
     const el = document.createElement('div');
-    el.className = `custom-marker ${isFromMarker ? 'from-marker' : 'to-marker'}`;
-    el.innerHTML = isFromMarker ? 'A' : 'B';
+    el.className = `custom-marker ${markerType}-marker`;
+    
+    switch (markerType) {
+      case 'from':
+        el.innerHTML = 'A';
+        break;
+      case 'poi':
+        el.innerHTML = 'B';
+        break;
+      case 'to':
+        el.innerHTML = 'C';
+        break;
+    }
 
     return new mapboxgl.Marker({
       element: el
@@ -282,12 +310,15 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   fitMapToMarkers(): void {
-    if (!this.fromMarker && !this.toMarker) return;
+    if (!this.fromMarker && !this.poiMarker && !this.toMarker) return;
 
     const bounds = new mapboxgl.LngLatBounds();
     
     if (this.fromMarker) {
       bounds.extend(this.fromMarker.getLngLat());
+    }
+    if (this.poiMarker) {
+      bounds.extend(this.poiMarker.getLngLat());
     }
     if (this.toMarker) {
       bounds.extend(this.toMarker.getLngLat());
@@ -300,11 +331,12 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initializeSearchBox(): void {
-    if (this.fromAddressSearch?.nativeElement && this.toAddressSearch?.nativeElement) {
+    if (this.fromAddressSearch?.nativeElement && this.poiAddressSearch?.nativeElement && this.toAddressSearch?.nativeElement) {
       if (customElements.get('mapbox-search-box')) {
-        // Initialize both search boxes
-        this.initializeSearchListener(this.fromAddressSearch.nativeElement, true);
-        this.initializeSearchListener(this.toAddressSearch.nativeElement, false);
+        // Initialize all three search boxes
+        this.initializeSearchListener(this.fromAddressSearch.nativeElement, 'from');
+        this.initializeSearchListener(this.poiAddressSearch.nativeElement, 'poi');
+        this.initializeSearchListener(this.toAddressSearch.nativeElement, 'to');
         this.isSearchLoading = false;
       } else {
         // If the custom element is not yet defined, wait a bit and try again
@@ -315,7 +347,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initializeSearchListener(
     searchBox: any,
-    isFromAddress: boolean
+    addressType: 'from' | 'poi' | 'to'
   ): void {
     searchBox.accessToken = environment.mapboxToken;
     searchBox.options = {
@@ -325,7 +357,19 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Set initial value if in edit mode
     if (this.isEditMode) {
-      const address = isFromAddress ? this.placeForm.get('fromAddress')?.value : this.placeForm.get('toAddress')?.value;
+      let address;
+      switch (addressType) {
+        case 'from':
+          address = this.placeForm.get('fromAddress')?.value;
+          break;
+        case 'poi':
+          address = this.placeForm.get('poiAddress')?.value;
+          break;
+        case 'to':
+          address = this.placeForm.get('toAddress')?.value;
+          break;
+      }
+      
       if (address) {
         // Need to wait for the component to be fully initialized
         setTimeout(() => {
@@ -342,26 +386,52 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       const address = event.detail?.features?.[0]?.properties?.full_address;
       
       if (coordinates) {
-        const currentMarker = isFromAddress ? this.fromMarker : this.toMarker;
+        // Remove existing marker of this type
+        let currentMarker;
+        switch (addressType) {
+          case 'from':
+            currentMarker = this.fromMarker;
+            break;
+          case 'poi':
+            currentMarker = this.poiMarker;
+            break;
+          case 'to':
+            currentMarker = this.toMarker;
+            break;
+        }
+        
         if (currentMarker) {
           currentMarker.remove();
         }
-        if (isFromAddress) {
-          this.fromMarker = this.createMarker(coordinates, true);
-          this.placeForm.patchValue({
-            fromAddress: address,
-            fromCoordinates: coordinates
-          });
-        } else {
-          this.toMarker = this.createMarker(coordinates, false);
-          this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
-          this.placeForm.patchValue({
-            toAddress: address,
-            toCoordinates: coordinates
-          });
-          // Calculate visualization data when toCoordinates changes
-          this.calculateAllVisualizationData();
+
+        // Create new marker and update form
+        switch (addressType) {
+          case 'from':
+            this.fromMarker = this.createMarker(coordinates, 'from');
+            this.placeForm.patchValue({
+              fromAddress: address,
+              fromCoordinates: coordinates
+            });
+            break;
+          case 'poi':
+            this.poiMarker = this.createMarker(coordinates, 'poi');
+            this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
+            this.placeForm.patchValue({
+              poiAddress: address,
+              poiCoordinates: coordinates
+            });
+            // Calculate visualization data when POI coordinates changes
+            this.calculateAllVisualizationData();
+            break;
+          case 'to':
+            this.toMarker = this.createMarker(coordinates, 'to');
+            this.placeForm.patchValue({
+              toAddress: address,
+              toCoordinates: coordinates
+            });
+            break;
         }
+        
         this.fitMapToMarkers();
       }
     });
@@ -426,17 +496,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private endTimeValidator(control: any) {
-    if (!control.value) return null;
-    
-    const startTime = this.placeForm?.get('startTime')?.value;
-    if (!startTime) return null;
 
-    const start = new Date(`2000-01-01T${startTime}`);  // this date is arbitrary, we just need a date object
-    const end = new Date(`2000-01-01T${control.value}`); // this date is arbitrary, we just need a date object
-
-    return end <= start ? { endTimeInvalid: true } : null;
-  }
 
   validateForm(): boolean {
     this.formErrors = {};
@@ -449,30 +509,42 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.formErrors['fromAddress'] = 'Please enter a starting location';
     }
     
-    if (this.placeForm.get('toAddress')?.errors?.['required']) {
-      this.formErrors['toAddress'] = 'Please enter a destination';
-    }
-    
     if (this.placeForm.get('fromCoordinates')?.errors?.['required']) {
       this.formErrors['fromCoordinates'] = 'Please select a valid starting location from the suggestions';
+    }
+    
+    if (this.placeForm.get('leaveTime')?.errors?.['required']) {
+      this.formErrors['leaveTime'] = 'Please enter a leave time';
+    }
+    
+    if (this.placeForm.get('poiAddress')?.errors?.['required']) {
+      this.formErrors['poiAddress'] = 'Please enter a point of interest';
+    }
+    
+    if (this.placeForm.get('poiCoordinates')?.errors?.['required']) {
+      this.formErrors['poiCoordinates'] = 'Please select a valid point of interest from the suggestions';
+    }
+    
+    if (this.placeForm.get('timeSpentAtPoi')?.errors?.['required']) {
+      this.formErrors['timeSpentAtPoi'] = 'Please enter time spent at POI';
+    } else if (this.placeForm.get('timeSpentAtPoi')?.errors?.['min']) {
+      this.formErrors['timeSpentAtPoi'] = 'Time spent must be at least 1 minute';
+    }
+    
+    if (this.placeForm.get('toAddress')?.errors?.['required']) {
+      this.formErrors['toAddress'] = 'Please enter a destination';
     }
     
     if (this.placeForm.get('toCoordinates')?.errors?.['required']) {
       this.formErrors['toCoordinates'] = 'Please select a valid destination from the suggestions';
     }
     
+    if (this.placeForm.get('arriveTime')?.errors?.['required']) {
+      this.formErrors['arriveTime'] = 'Please enter an arrival time';
+    }
+    
     if (this.placeForm.get('date')?.errors?.['required']) {
       this.formErrors['date'] = 'Please select a date';
-    }
-    
-    if (this.placeForm.get('startTime')?.errors?.['required']) {
-      this.formErrors['startTime'] = 'Please select a start time';
-    }
-    
-    if (this.placeForm.get('endTime')?.errors?.['required']) {
-      this.formErrors['endTime'] = 'Please select an end time';
-    } else if (this.placeForm.get('endTime')?.errors?.['endTimeInvalid']) {
-      this.formErrors['endTime'] = 'End time must be after start time';
     }
     
     if (this.placeForm.get('activityType')?.errors?.['required']) {
@@ -644,6 +716,21 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       rightLabel, 
       hasData: true 
     };
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    
+    // Parse the date string manually to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+    
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   }
 
   openGeoInfoModal(id: string): void {

@@ -5,31 +5,81 @@
                 <span class="mode-indicator" [class.edit-mode]="isEditMode">
                     {{ isEditMode ? 'Edit Place' : 'Add New Place' }}
                 </span>
+                <span class="date-indicator" *ngIf="placeForm.get('date')?.value">
+                    {{ formatDate(placeForm.get('date')?.value) }}
+                </span>
             </h1>
             <div class="location-section">
                 <div class="address-inputs">
                     <div class="from-address" data-field="fromAddress">
-                        <label>From (A): </label>
-                        <div class="search-wrapper">
-                            <mapbox-search-box #fromAddressSearch class="search-container" [class.error]="formErrors['fromAddress']"></mapbox-search-box>
-                            <div class="search-loader" *ngIf="isSearchLoading">
-                                <div class="loader"></div>
+                        <div class="address-row">
+                            <div class="address-input">
+                                <label>From (A): </label>
+                                <div class="search-wrapper">
+                                    <mapbox-search-box #fromAddressSearch class="search-container" [class.error]="formErrors['fromAddress']"></mapbox-search-box>
+                                    <div class="search-loader" *ngIf="isSearchLoading">
+                                        <div class="loader"></div>
+                                    </div>
+                                </div>
+                                <div class="error-message" *ngIf="formErrors['fromAddress']">
+                                    {{ formErrors['fromAddress'] }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="error-message" *ngIf="formErrors['fromAddress']">
-                            {{ formErrors['fromAddress'] }}
+                            <div class="time-input" data-field="leaveTime">
+                                <label>Leave Time: </label>
+                                <input type="time" formControlName="leaveTime" [class.error]="formErrors['leaveTime']">
+                                <div class="error-message" *ngIf="formErrors['leaveTime']">
+                                    {{ formErrors['leaveTime'] }}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="to-address" data-field="toAddress">
-                        <label>To (B): </label>
-                        <div class="search-wrapper">
-                            <mapbox-search-box #toAddressSearch class="search-container" [class.error]="formErrors['toAddress']"></mapbox-search-box>
-                            <div class="search-loader" *ngIf="isSearchLoading">
-                                <div class="loader"></div>
+                    
+                    <div class="poi-address" data-field="poiAddress">
+                        <div class="address-row">
+                            <div class="address-input">
+                                <label>Point of Interest (B): </label>
+                                <div class="search-wrapper">
+                                    <mapbox-search-box #poiAddressSearch class="search-container" [class.error]="formErrors['poiAddress']"></mapbox-search-box>
+                                    <div class="search-loader" *ngIf="isSearchLoading">
+                                        <div class="loader"></div>
+                                    </div>
+                                </div>
+                                <div class="error-message" *ngIf="formErrors['poiAddress']">
+                                    {{ formErrors['poiAddress'] }}
+                                </div>
+                            </div>
+                            <div class="time-input" data-field="timeSpentAtPoi">
+                                <label>Time Spent (minutes): </label>
+                                <input type="number" formControlName="timeSpentAtPoi" min="1" [class.error]="formErrors['timeSpentAtPoi']">
+                                <div class="error-message" *ngIf="formErrors['timeSpentAtPoi']">
+                                    {{ formErrors['timeSpentAtPoi'] }}
+                                </div>
                             </div>
                         </div>
-                        <div class="error-message" *ngIf="formErrors['toAddress']">
-                            {{ formErrors['toAddress'] }}
+                    </div>
+                    
+                    <div class="to-address" data-field="toAddress">
+                        <div class="address-row">
+                            <div class="address-input">
+                                <label>To (C): </label>
+                                <div class="search-wrapper">
+                                    <mapbox-search-box #toAddressSearch class="search-container" [class.error]="formErrors['toAddress']"></mapbox-search-box>
+                                    <div class="search-loader" *ngIf="isSearchLoading">
+                                        <div class="loader"></div>
+                                    </div>
+                                </div>
+                                <div class="error-message" *ngIf="formErrors['toAddress']">
+                                    {{ formErrors['toAddress'] }}
+                                </div>
+                            </div>
+                            <div class="time-input" data-field="arriveTime">
+                                <label>Arrive Time: </label>
+                                <input type="time" formControlName="arriveTime" [class.error]="formErrors['arriveTime']">
+                                <div class="error-message" *ngIf="formErrors['arriveTime']">
+                                    {{ formErrors['arriveTime'] }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -156,7 +206,7 @@
                                     }
                                 </div>
                             </div>
-                        } @else if (!placeForm.get('toCoordinates')?.value) {
+                        } @else if (!placeForm.get('poiCoordinates')?.value) {
                             <div class="geo-status-message">
                                 <div class="status-icon">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -164,9 +214,9 @@
                                         <circle cx="12" cy="10" r="3"></circle>
                                     </svg>
                                 </div>
-                                <span>Select a destination to see neighborhood insights</span>
+                                <span>Select a point of interest to see neighborhood insights</span>
                             </div>
-                        } @else if (placeForm.get('toCoordinates')?.value && !loadedGeoJsonData) {
+                        } @else if (placeForm.get('poiCoordinates')?.value && !loadedGeoJsonData) {
                             <div class="geo-status-message loading">
                                 <div class="loading-spinner">
                                     <div class="spinner"></div>
@@ -225,29 +275,6 @@
                 </div>
             </div>
             <div class="details-section">
-                <div class="date-time">
-                    <div class="date-picker" data-field="date">
-                        <label>Date: </label>
-                        <input type="date" formControlName="date" [class.error]="formErrors['date']">
-                        <div class="error-message" *ngIf="formErrors['date']">
-                            {{ formErrors['date'] }}
-                        </div>
-                    </div>
-                    <div class="time-picker" data-field="startTime">
-                        <label>Time: </label>
-                        <input type="time" formControlName="startTime" [class.error]="formErrors['startTime']">
-                        <div class="error-message" *ngIf="formErrors['startTime']">
-                            {{ formErrors['startTime'] }}
-                        </div>
-                    </div>
-                    <span>to</span>
-                    <div class="time-picker" data-field="endTime">
-                        <input type="time" formControlName="endTime" [class.error]="formErrors['endTime']">
-                        <div class="error-message" *ngIf="formErrors['endTime']">
-                            {{ formErrors['endTime'] }}
-                        </div>
-                    </div>
-                </div>
                 <div class="lists-container">
                     <div class="activity-type" data-field="activityType">
                         <label>Activity Type: </label>

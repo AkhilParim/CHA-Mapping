@@ -17,7 +17,7 @@ form {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 8px;
         min-height: 0;
         overflow: hidden;
 
@@ -36,6 +36,17 @@ form {
                 font-family: 'Poppins', sans-serif;
                 font-size: 20px;
             }
+            
+            .date-indicator {
+                font-size: 14px;
+                color: #6c757d;
+                font-weight: 400;
+                margin-left: auto;
+                background: #f8f9fa;
+                padding: 6px 12px;
+                border-radius: 20px;
+                border: 1px solid #e9ecef;
+            }
         }
         
         .location-section {
@@ -46,25 +57,91 @@ form {
             overflow: hidden;
             
             .address-inputs {
-                margin-bottom: 20px;
+                margin-bottom: 8px;
                 flex-shrink: 0;
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 8px 12px;
+                border: 1px solid #e9ecef;
                 
-                .from-address, .to-address {
-                    margin-bottom: 10px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
+                .from-address, .poi-address, .to-address {
+                    margin-bottom: 6px;
                     
-                    label {
-                        min-width: 70px;
-                        color: #495057;
-                        font-weight: 500;
+                    &:last-child {
+                        margin-bottom: 0;
                     }
+                    
+                    .address-row {
+                        display: flex;
+                        gap: 12px;
+                        align-items: center;
+                        background: white;
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        border: 1px solid #e2e8f0;
+                        transition: all 0.2s ease;
+                        
+                        &:hover {
+                            border-color: #cbd5e1;
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                        }
+                        
+                        .address-input {
+                            flex: 2;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 4px;
+                            
+                            label {
+                                color: #374151;
+                                font-weight: 600;
+                                font-size: 13px;
+                                margin-bottom: 2px;
+                            }
+                        }
+                        
+                        .time-input {
+                            flex: 1;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 4px;
+                            
+                            label {
+                                color: #374151;
+                                font-weight: 600;
+                                font-size: 12px;
+                                margin-bottom: 2px;
+                            }
+                            
+                            input {
+                                padding: 8px 10px;
+                                border: 1px solid #e5e7eb;
+                                border-radius: 6px;
+                                font-size: 13px;
+                                color: #374151;
+                                background-color: #fff;
+                                transition: all 0.2s ease;
+                                height: 36px;
+                                
+                                &:focus {
+                                    outline: none;
+                                    border-color: #3b82f6;
+                                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+                                }
+                                
+                                &.error {
+                                    border-color: #ef4444;
+                                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+                                }
+                            }
+                        }
+                    }
+                }
                     
                     .search-wrapper {
                         flex: 1;
                         position: relative;
-                        padding: 2px;
+                        padding: 1px;
                         
                         .search-loader {
                             position: absolute;
@@ -79,8 +156,8 @@ form {
                             border-radius: 6px;
                             
                             .loader {
-                                width: 20px;
-                                height: 20px;
+                                width: 16px;
+                                height: 16px;
                                 border: 2px solid #dee2e6;
                                 border-top-color: #228be6;
                                 border-radius: 50%;
@@ -104,38 +181,62 @@ form {
                                         width: 100%;
                                         max-width: none;
                                         box-shadow: none;
-                                        border: 1px solid #dee2e6;
+                                        border: 1px solid #e5e7eb;
                                         border-radius: 6px;
-                                        font-size: 14px;
+                                        font-size: 13px;
+                                        transition: all 0.2s ease;
+                                        height: 36px;
+                                        
+                                        &:focus-within {
+                                            border-color: #3b82f6;
+                                            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+                                        }
+                                        
+                                        &.error {
+                                            border-color: #ef4444;
+                                            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+                                        }
                                         
                                         input {
-                                            padding: 8px 12px;
-                                            height: auto;
+                                            padding: 8px 10px;
+                                            height: 34px;
                                             border: none;
                                             border-radius: 6px;
-                                            color: #495057;
+                                            color: #374151;
+                                            font-size: 13px;
                                             
                                             &:focus {
                                                 outline: none;
                                             }
+                                            
+                                            &::placeholder {
+                                                color: #9ca3af;
+                                            }
                                         }
 
                                         .suggestions {
-                                            border: 1px solid #dee2e6;
+                                            border: 1px solid #e5e7eb;
                                             border-radius: 6px;
+                                            margin-top: 2px;
+                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                                             
                                             li {
-                                                padding: 8px 12px;
-                                                font-size: 14px;
-                                                color: #495057;
+                                                padding: 8px 10px;
+                                                font-size: 13px;
+                                                color: #374151;
+                                                border-bottom: 1px solid #f3f4f6;
+                                                
+                                                &:last-child {
+                                                    border-bottom: none;
+                                                }
                                                 
                                                 &:hover {
-                                                    background-color: #f8f9fa;
+                                                    background-color: #f9fafb;
                                                 }
                                                 
                                                 &.active {
-                                                    background-color: #e7f5ff;
-                                                    color: #1971c2;
+                                                    background-color: #eff6ff;
+                                                    color: #2563eb;
                                                 }
                                             }
                                         }
@@ -166,7 +267,7 @@ form {
             
             .map-container {
                 flex: 1;
-                min-height: 250px;
+                min-height: 300px;
                 display: flex;
                 flex-direction: column;
                 
@@ -174,7 +275,9 @@ form {
                     width: 100%;
                     height: 100%;
                     flex: 1;
-                    border-radius: 8px;
+                    border-radius: 12px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                 }
 
                 .map-placeholder {
@@ -206,6 +309,10 @@ form {
                         &.from-marker {
                           background-color: #228be6;
                         }
+                        
+                        &.poi-marker {
+                          background-color: #40c057;
+                        }
                       
                         &.to-marker {
                           background-color: #f03e3e;
@@ -219,33 +326,32 @@ form {
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            max-height: 40vh;
-            min-height: 60px;
+            max-height: 25vh;
+            min-height: 40px;
             
             .geo-info-table {
                 flex: 1;
                 overflow-y: auto;
-                margin-bottom: 16px;
+                margin-bottom: 12px;
                 
                 .metrics-container {
                     display: flex;
                     flex-direction: column;
-                    gap: 16px;
+                    gap: 8px;
                 }
 
                 .metric-card {
                     background: #ffffff;
                     border: 1px solid #e2e8f0;
-                    border-radius: 12px;
-                    padding: 16px;
+                    border-radius: 8px;
+                    padding: 12px;
                     transition: all 0.2s ease;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
                     position: relative;
 
                     &:hover {
                         border-color: #cbd5e1;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                        transform: translateY(-1px);
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                     }
                 }
 
@@ -254,28 +360,23 @@ form {
                     border: none;
                     color: #64748b;
                     cursor: pointer;
-                    padding: 6px;
-                    border-radius: 6px;
+                    padding: 4px;
+                    border-radius: 4px;
                     transition: all 0.2s ease;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-shrink: 0;
-                    margin-left: 8px;
+                    margin-left: 6px;
 
                     &:hover {
                         background-color: #f1f5f9;
                         color: #475569;
-                        transform: scale(1.1);
-                    }
-
-                    &:active {
-                        transform: scale(0.9);
                     }
 
                     svg {
-                        width: 16px;
-                        height: 16px;
+                        width: 14px;
+                        height: 14px;
                     }
                 }
 
@@ -298,15 +399,16 @@ form {
                 .viz-content {
                     display: flex;
                     align-items: center;
-                    gap: 12px;
+                    gap: 8px;
                 }
 
                 .compact-label {
-                    font-size: 12px;
+                    font-size: 11px;
                     font-weight: 500;
                     color: #64748b;
-                    line-height: 1.3;
+                    line-height: 1.2;
                     flex: 0 0 auto;
+                    min-width: 110px;
                     
                     &.left {
                         text-align: left;
@@ -319,12 +421,12 @@ form {
 
                 .compact-bars-container {
                     display: flex;
-                    height: 24px;
+                    height: 18px;
                     flex: 1;
                     position: relative;
-                    border-radius: 12px;
+                    border-radius: 9px;
                     overflow: hidden;
-                    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
                 }
 
                 .compact-bar {
@@ -362,13 +464,13 @@ form {
                 }
 
                 .compact-circle {
-                    width: 16px;
-                    height: 16px;
+                    width: 12px;
+                    height: 12px;
                     border-radius: 50%;
                     background-color: #ffffff;
                     border: 2px solid #1e293b;
                     transform: translateX(-50%);
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
                     position: relative;
 
                     &::after {
@@ -376,8 +478,8 @@ form {
                         position: absolute;
                         top: 50%;
                         left: 50%;
-                        width: 6px;
-                        height: 6px;
+                        width: 4px;
+                        height: 4px;
                         background-color: #1e293b;
                         border-radius: 50%;
                         transform: translate(-50%, -50%);
@@ -388,11 +490,11 @@ form {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 8px;
-                    padding: 20px;
+                    gap: 6px;
+                    padding: 12px;
                     background: #f8fafc;
                     border: 1px dashed #cbd5e1;
-                    border-radius: 8px;
+                    border-radius: 6px;
                     color: #64748b;
 
                     .info-button {
@@ -401,23 +503,23 @@ form {
                 }
 
                 .no-data-text {
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 500;
                     font-style: italic;
                 }
 
                 .geo-status-message {
                     display: flex;
-                    flex-direction: column;
+                    flex-direction: row;
                     align-items: center;
                     justify-content: center;
-                    gap: 12px;
-                    padding: 32px 20px;
+                    gap: 8px;
+                    padding: 16px 12px;
                     text-align: center;
                     color: #64748b;
                     background: #f8fafc;
                     border: 1px dashed #cbd5e1;
-                    border-radius: 12px;
+                    border-radius: 8px;
 
                     &.loading {
                         background: #fefce8;
@@ -433,18 +535,18 @@ form {
 
                     .status-icon {
                         opacity: 0.6;
+                        flex-shrink: 0;
                         
                         svg {
-                            width: 24px;
-                            height: 24px;
+                            width: 18px;
+                            height: 18px;
                         }
                     }
 
                     span {
-                        font-size: 14px;
+                        font-size: 12px;
                         font-weight: 500;
-                        max-width: 280px;
-                        line-height: 1.4;
+                        line-height: 1.3;
                     }
                 }
 
@@ -862,14 +964,23 @@ form {
             }
         }
     }
-}
+/* } */
 
 /* Form validation styles */
 .error-message {
-  color: #ff4444;
-  font-size: 12px;
-  margin-top: 4px;
-  margin-bottom: 8px;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  &::before {
+    content: "⚠";
+    font-size: 14px;
+  }
 }
 
 /* Add error states to form elements */
