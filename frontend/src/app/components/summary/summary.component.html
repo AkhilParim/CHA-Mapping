@@ -1,107 +1,191 @@
 <div class="summary-container" @fadeIn>
   <div class="summary-header">
-    <h2>Summary</h2>
-    <p class="subtitle">Your visits includes {{totalPlaces}} places across {{journeyDates.length}} days.</p>
+    <div class="header-content">
+      <div class="header-text">
+        <h2>Summary</h2>
+        <p class="subtitle">Your journey includes {{totalPlaces}} places across {{journeyDates.length}} days.</p>
+      </div>
+      <button class="close-button" (click)="onCancel()" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="summary-content" @slideIn>
-    <div *ngFor="let date of journeyDates" class="date-section">
-      <div class="date-header">{{date}}</div>
-      <div class="date-places">
-        <div *ngFor="let place of placesByDate.get(date); let i = index" class="place-card">
-          <div class="place-number">{{i+1}}</div>
-          <div class="place-content">
-            <div class="place-title">
-              <span class="activity-type">{{place.activityType}}</span>
-              <span>{{place.placeLabel || ''}}</span>
-              <div *ngIf="place.emotion">
-                <span>{{place.emotion.emoji}}</span>
+    <!-- Left Column: Places by Date -->
+    <div class="left-panel">
+      <div class="places-content">
+        <div *ngFor="let date of journeyDates" class="date-section">
+          <div class="date-header">{{date}}</div>
+          <div class="date-places">
+            <div *ngFor="let place of placesByDate.get(date); let i = index" class="place-item" 
+                 [class.expanded]="isPlaceExpanded(place)">
+              
+              <!-- Collapsed View - Single Line -->
+              <div class="place-summary" (click)="togglePlaceExpansion(place)">
+                <span class="place-alphabet">{{getPlaceAlphabet(place)}}</span>
+                <div class="place-info-inline">
+                  <span class="activity-type">{{place.activityType}}</span>
+                  <span class="separator">•</span>
+                  <span class="place-label">{{place.placeLabel || 'Unnamed location'}}</span>
+                  <span class="separator" *ngIf="place.leaveTime">•</span>
+                  <span class="place-time" *ngIf="place.leaveTime">{{formatTime(place.leaveTime)}}</span>
+                </div>
+                <div class="expand-arrow">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </div>
               </div>
-            </div>
-            <div class="place-time">
-              <!-- {{formatTime(place.startTime)}} - {{formatTime(place.endTime)}} -->
-            </div>
-            <div *ngIf="place.comments" class="comments">
-              <span class="detail-label">Comments:</span>
-              <span>{{place.comments}}</span>
-            </div>
-            
-            <!-- Neighborhood Insights Section -->
-            <div class="neighborhood-insights">
-              <div class="insights-grid">
-                <!-- Community Conditions -->
-                <div class="insight-item">
-                  @if (getVisualizationData(place, 'NDI').hasData) {
-                    <div class="summary-visualization ndi-viz">
-                      <div class="viz-content">
-                        <span class="viz-label left">{{getVisualizationData(place, 'NDI').leftLabel}}</span>
-                        <div class="summary-bars-container">
-                          <div class="summary-bar bar-1"></div>
-                          <div class="summary-bar bar-2"></div>
-                          <div class="summary-bar bar-3"></div>
-                          <div class="summary-location-marker" *ngIf="getVisualizationData(place, 'NDI').barNumber" 
-                                  [style.left]="((getVisualizationData(place, 'NDI').barNumber! - 0.5) * 33.33) + '%'">
-                            <div class="summary-circle"></div>
-                          </div>
-                        </div>
-                        <span class="viz-label right">{{getVisualizationData(place, 'NDI').rightLabel}}</span>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="no-data-text">No data available</div>
-                  }
+
+              <!-- Expanded View - Detailed Information -->
+              <div class="place-details" *ngIf="isPlaceExpanded(place)">
+                
+                <!-- Addresses and Times -->
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">From:</span>
+                    <span class="detail-value" title="{{place.fromAddress}}">{{place.fromAddress}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Leave:</span>
+                    <span class="detail-value">{{formatTime(place.leaveTime)}}</span>
+                  </div>
                 </div>
 
-                <!-- Neighborhood Greenness -->
-                <div class="insight-item">
-                  @if (getVisualizationData(place, 'tes').hasData) {
-                    <div class="summary-visualization tes-viz">
-                      <div class="viz-content">
-                        <span class="viz-label left">{{getVisualizationData(place, 'tes').leftLabel}}</span>
-                        <div class="summary-bars-container">
-                          <div class="summary-bar bar-1"></div>
-                          <div class="summary-bar bar-2"></div>
-                          <div class="summary-bar bar-3"></div>
-                          <div class="summary-location-marker" *ngIf="getVisualizationData(place, 'tes').barNumber" 
-                                  [style.left]="((getVisualizationData(place, 'tes').barNumber! - 0.5) * 33.33) + '%'">
-                            <div class="summary-circle"></div>
-                          </div>
-                        </div>
-                        <span class="viz-label right">{{getVisualizationData(place, 'tes').rightLabel}}</span>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="no-data-text">No data available</div>
-                  }
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">Point of Interest:</span>
+                    <span class="detail-value" title="{{place.poiAddress}}">{{place.poiAddress}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Duration at POI:</span>
+                    <span class="detail-value">{{place.timeSpentAtPoi}} minutes</span>
+                  </div>
                 </div>
 
-                <!-- Mental Wellbeing -->
-                <div class="insight-item">
-                  @if (getVisualizationData(place, 'MHLTH_CrudePrev').hasData) {
-                    <div class="summary-visualization mhlth-viz">
-                      <div class="viz-content">
-                        <span class="viz-label left">{{getVisualizationData(place, 'MHLTH_CrudePrev').leftLabel}}</span>
-                        <div class="summary-bars-container">
-                          <div class="summary-bar bar-1"></div>
-                          <div class="summary-bar bar-2"></div>
-                          <div class="summary-bar bar-3"></div>
-                          <div class="summary-location-marker" *ngIf="getVisualizationData(place, 'MHLTH_CrudePrev').barNumber" 
-                          [style.left]="((getVisualizationData(place, 'MHLTH_CrudePrev').barNumber! - 0.5) * 33.33) + '%'">
-                            <div class="summary-circle"></div>
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">To:</span>
+                    <span class="detail-value" title="{{place.toAddress}}">{{place.toAddress}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Arrive:</span>
+                    <span class="detail-value">{{formatTime(place.arriveTime)}}</span>
+                  </div>
+                </div>
+
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">Transport:</span>
+                    <span class="detail-value">{{place.transportType}}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="place.emotion">
+                    <span class="detail-label">Feeling:</span>
+                    <span class="detail-value">{{place.emotion.emoji}}</span>
+                  </div>
+                </div>
+
+                <!-- Emotion and Comments -->
+                <div class="detail-row full-width" *ngIf="place.comments">
+                  <div class="detail-item">
+                    <span class="detail-label">Comments:</span>
+                    <span class="detail-value" title="{{place.comments}}">{{place.comments}}</span>
+                  </div>
+                </div>
+
+                <!-- Compact Geo Info Visualization -->
+                <div class="compact-geo-info" *ngIf="place.geoVisualization">
+                  <div class="geo-metrics">
+                    
+                    <!-- NDI Visualization -->
+                    <div class="compact-metric">
+                      @if (getVisualizationData(place, 'NDI').hasData) {
+                        <div class="compact-visualization ndi-viz">
+                          <div class="viz-content">
+                            <span class="compact-label left">{{getVisualizationData(place, 'NDI').leftLabel}}</span>
+                            <div class="compact-bars-container">
+                              <div class="compact-bar bar-1"></div>
+                              <div class="compact-bar bar-2"></div>
+                              <div class="compact-bar bar-3"></div>
+                              <div class="compact-location-marker" *ngIf="getVisualizationData(place, 'NDI').barNumber" 
+                                      [style.left]="((getVisualizationData(place, 'NDI').barNumber! - 0.5) * 33.33) + '%'">
+                                <div class="compact-circle"></div>
+                              </div>
+                            </div>
+                            <span class="compact-label right">{{getVisualizationData(place, 'NDI').rightLabel}}</span>
                           </div>
                         </div>
-                        <span class="viz-label right">{{getVisualizationData(place, 'MHLTH_CrudePrev').rightLabel}}</span>
-                      </div>
+                      } @else {
+                        <div class="no-data-compact">Community Conditions: No data</div>
+                      }
                     </div>
-                  } @else {
-                    <div class="no-data-text">No data available</div>
-                  }
+
+                    <!-- TES Visualization -->
+                    <div class="compact-metric">
+                      @if (getVisualizationData(place, 'tes').hasData) {
+                        <div class="compact-visualization tes-viz">
+                          <div class="viz-content">
+                            <span class="compact-label left">{{getVisualizationData(place, 'tes').leftLabel}}</span>
+                            <div class="compact-bars-container">
+                              <div class="compact-bar bar-1"></div>
+                              <div class="compact-bar bar-2"></div>
+                              <div class="compact-bar bar-3"></div>
+                              <div class="compact-location-marker" *ngIf="getVisualizationData(place, 'tes').barNumber" 
+                                      [style.left]="((getVisualizationData(place, 'tes').barNumber! - 0.5) * 33.33) + '%'">
+                                <div class="compact-circle"></div>
+                              </div>
+                            </div>
+                            <span class="compact-label right">{{getVisualizationData(place, 'tes').rightLabel}}</span>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="no-data-compact">Neighborhood Greenness: No data</div>
+                      }
+                    </div>
+
+                    <!-- MHLTH Visualization -->
+                    <div class="compact-metric">
+                      @if (getVisualizationData(place, 'MHLTH_CrudePrev').hasData) {
+                        <div class="compact-visualization mhlth-viz">
+                          <div class="viz-content">
+                            <span class="compact-label left">{{getVisualizationData(place, 'MHLTH_CrudePrev').leftLabel}}</span>
+                            <div class="compact-bars-container">
+                              <div class="compact-bar bar-1"></div>
+                              <div class="compact-bar bar-2"></div>
+                              <div class="compact-bar bar-3"></div>
+                              <div class="compact-location-marker" *ngIf="getVisualizationData(place, 'MHLTH_CrudePrev').barNumber" 
+                              [style.left]="((getVisualizationData(place, 'MHLTH_CrudePrev').barNumber! - 0.5) * 33.33) + '%'">
+                                <div class="compact-circle"></div>
+                              </div>
+                            </div>
+                            <span class="compact-label right">{{getVisualizationData(place, 'MHLTH_CrudePrev').rightLabel}}</span>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="no-data-compact">Mental Wellbeing: No data</div>
+                      }
+                    </div>
+
+                  </div>
                 </div>
+
               </div>
             </div>
           </div>
         </div>
+        <div class="no-places" *ngIf="journeyDates.length === 0">
+          No places to display
+        </div>
       </div>
+    </div>
+
+    <!-- Right Column: Map -->
+    <div class="right-panel">
+      <div #mapContainer class="map-container"></div>
     </div>
   </div>
 

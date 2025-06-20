@@ -68,3 +68,24 @@ p {
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18) !important;
     }
 }
+
+/* Summary Dialog Panel */
+.summary-dialog {
+    .mat-mdc-dialog-container {
+        padding: 0 !important;
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: none !important;
+        max-height: none !important;
+        width: 90vw !important;
+        height: 95vh !important;
+    }
+    
+    .mdc-dialog__surface {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18) !important;
+        width: 90vw !important;
+        height: 95vh !important;
+        max-width: none !important;
+        max-height: none !important;
+    }
+}

@@ -1,9 +1,12 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ViewChild, ElementRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { Place } from '../../services/places.service';
+import mapboxgl from 'mapbox-gl';
+import { environment } from '../../../environments/environment';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface SummaryData {
   journeyDates: string[];
@@ -35,10 +38,18 @@ interface SummaryData {
   templateUrl: './summary.component.html',
   styleUrl: './summary.component.scss'
 })
-export class SummaryComponent implements OnInit {
+export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('mapContainer') mapContainer!: ElementRef;
+  
   journeyDates: string[] = [];
   placesByDate: Map<string, Place[]> = new Map();
+  allPlaces: Place[] = [];
   totalPlaces = 0;
+  map!: mapboxgl.Map;
+  private poiMarkers: mapboxgl.Marker[] = [];
+  private markerAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914]; // UIC Innovation Center Coordinates
+  selectedPlaceId: string | null = null;
   
   constructor(
     public dialogRef: MatDialogRef<SummaryComponent>,
@@ -49,9 +60,154 @@ export class SummaryComponent implements OnInit {
     this.journeyDates = this.data.journeyDates;
     this.placesByDate = this.data.placesByDate;
     
-    // Calculate total places
+    // Calculate total places and create flat array of all places with alphabet indices
     this.totalPlaces = Array.from(this.placesByDate.values())
       .reduce((total, places) => total + places.length, 0);
+    
+    // Create a flat array of all places in order for alphabet mapping
+    this.allPlaces = [];
+    this.journeyDates.forEach(date => {
+      const places = this.placesByDate.get(date) || [];
+      this.allPlaces.push(...places);
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.initializeMap();
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) {
+      this.map.remove();
+    }
+    this.removePoiMarkers();
+  }
+
+  initializeMap(): void {
+    mapboxgl.accessToken = environment.mapboxToken;
+    this.map = new mapboxgl.Map({
+      container: this.mapContainer.nativeElement,
+      style: 'mapbox://styles/mapbox/navigation-night-v1',
+      center: this.initialCoordinates,
+      zoom: 13
+    });
+    
+    this.map.on('load', () => {
+      this.renderPoiMarkers();
+    });
+  }
+
+  private renderPoiMarkers(): void {
+    if (!this.map) return;
+    this.removePoiMarkers();
+    if (!this.allPlaces || this.allPlaces.length === 0) return;
+    
+    let bounds: mapboxgl.LngLatBounds | null = null;
+    
+    this.allPlaces.forEach((place, idx) => {
+      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
+        const el = document.createElement('div');
+        el.className = 'custom-marker poi-marker';
+        el.innerHTML = this.markerAlphabet[idx % this.markerAlphabet.length];
+        
+        // Add click event listener to marker
+        el.addEventListener('click', (event) => {
+          event.stopPropagation();
+          this.togglePlaceExpansion(place);
+        });
+        
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat(place.poiCoordinates)
+          .addTo(this.map);
+        
+        this.poiMarkers.push(marker);
+        
+        if (!bounds) {
+          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
+        } else {
+          bounds.extend(place.poiCoordinates);
+        }
+      }
+    });
+    
+    if (bounds && this.poiMarkers.length > 0) {
+      this.map.fitBounds(bounds, { padding: 100, maxZoom: 15 });
+    }
+    this.highlightSelectedMarker();
+  }
+
+  private removePoiMarkers(): void {
+    this.poiMarkers.forEach(marker => marker.remove());
+    this.poiMarkers = [];
+  }
+
+  private highlightSelectedMarker(): void {
+    this.poiMarkers.forEach((marker, idx) => {
+      const el = marker.getElement();
+      if (!el) return;
+      
+      const place = this.allPlaces[idx];
+      if (this.selectedPlaceId && place && place.id === this.selectedPlaceId) {
+        el.classList.add('selected-marker');
+      } else {
+        el.classList.remove('selected-marker');
+      }
+    });
+  }
+
+  private zoomToPlace(place: Place): void {
+    if (!this.map || !place.poiCoordinates || !Array.isArray(place.poiCoordinates) || place.poiCoordinates.length !== 2) {
+      return;
+    }
+    
+    this.map.easeTo({
+      center: place.poiCoordinates,
+      zoom: 16,
+      duration: 1000
+    });
+  }
+
+  private resetMapView(): void {
+    if (!this.map || this.allPlaces.length === 0) return;
+    
+    let bounds: mapboxgl.LngLatBounds | null = null;
+    
+    this.allPlaces.forEach((place) => {
+      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
+        if (!bounds) {
+          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
+        } else {
+          bounds.extend(place.poiCoordinates);
+        }
+      }
+    });
+    
+    if (bounds && this.poiMarkers.length > 0) {
+      this.map.fitBounds(bounds, { padding: 100, maxZoom: 15, duration: 1000 });
+    }
+  }
+
+  getPlaceAlphabet(place: Place): string {
+    const index = this.allPlaces.indexOf(place);
+    return this.markerAlphabet[index % this.markerAlphabet.length];
+  }
+
+  togglePlaceExpansion(place: Place): void {
+    if (this.selectedPlaceId === place.id) {
+      // Collapse current place
+      this.selectedPlaceId = null;
+      this.highlightSelectedMarker();
+      this.resetMapView();
+    } else {
+      // Expand new place (and collapse any previously expanded)
+      this.selectedPlaceId = place.id;
+      this.highlightSelectedMarker();
+      this.zoomToPlace(place);
+    }
+  }
+
+  isPlaceExpanded(place: Place): boolean {
+    return this.selectedPlaceId === place.id;
   }
 
   getVisualizationData(place: Place, type: string): { 
@@ -129,8 +285,8 @@ export class SummaryComponent implements OnInit {
           (index + 1).toString(),
           this.escapeCSVField(place.activityType),
           this.escapeCSVField(place.placeLabel || ''),
-          // this.formatTime(place.startTime),
-          // this.formatTime(place.endTime),
+          this.escapeCSVField(place.leaveTime || ''),
+          this.escapeCSVField(place.arriveTime || ''),
           this.escapeCSVField(place.fromAddress),
           this.escapeCSVField(place.toAddress),
           this.escapeCSVField(place.transportType),

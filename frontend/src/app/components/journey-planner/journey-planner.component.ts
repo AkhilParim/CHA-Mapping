@@ -279,7 +279,10 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
     
     const dialogRef = this.dialog.open(SummaryComponent, {
       maxWidth: '95vw',
-      maxHeight: '90vh',
+      maxHeight: '95vh',
+      width: '90vw',
+      height: '95vh',
+      panelClass: 'summary-dialog',
       data: {
         journeyDates: Array.from(placesByDate.keys()),
         placesByDate
@@ -317,18 +320,25 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
     if (!this.places || this.places.length === 0) return;
     let bounds: mapboxgl.LngLatBounds | null = null;
     this.places.forEach((place, idx) => {
-      if (place.toCoordinates && Array.isArray(place.toCoordinates) && place.toCoordinates.length === 2) {
+      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
         const el = document.createElement('div');
         el.className = 'custom-marker to-marker';
         el.innerHTML = this.markerAlphabet[idx % this.markerAlphabet.length];
+        
+        // Add click event listener to marker for bidirectional interaction
+        el.addEventListener('click', (event) => {
+          event.stopPropagation();
+          this.selectPlace(place);
+        });
+        
         const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat(place.toCoordinates)
+          .setLngLat(place.poiCoordinates)
           .addTo(this.map);
         this.toMarkers.push(marker);
         if (!bounds) {
-          bounds = new mapboxgl.LngLatBounds(place.toCoordinates, place.toCoordinates);
+          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
         } else {
-          bounds.extend(place.toCoordinates);
+          bounds.extend(place.poiCoordinates);
         }
       }
     });

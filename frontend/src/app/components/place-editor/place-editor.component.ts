@@ -408,14 +408,14 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         switch (addressType) {
           case 'from':
             this.fromMarker = this.createMarker(coordinates, 'from');
-            this.placeForm.patchValue({
-              fromAddress: address,
-              fromCoordinates: coordinates
-            });
+          this.placeForm.patchValue({
+            fromAddress: address,
+            fromCoordinates: coordinates
+          });
             break;
           case 'poi':
             this.poiMarker = this.createMarker(coordinates, 'poi');
-            this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
+          this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
             this.placeForm.patchValue({
               poiAddress: address,
               poiCoordinates: coordinates
@@ -425,10 +425,10 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             break;
           case 'to':
             this.toMarker = this.createMarker(coordinates, 'to');
-            this.placeForm.patchValue({
-              toAddress: address,
-              toCoordinates: coordinates
-            });
+          this.placeForm.patchValue({
+            toAddress: address,
+            toCoordinates: coordinates
+          });
             break;
         }
         
