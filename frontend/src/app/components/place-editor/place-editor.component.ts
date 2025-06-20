@@ -14,8 +14,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { Collection } from '../../services/geojson.service';
 
 interface EmotionState {
-  x: number;
-  y: number;
+  x: number; // normalized coordinate: -1 to 1 (left to right)
+  y: number; // normalized coordinate: -1 to 1 (top to bottom)
   emoji: string;
 }
 
@@ -35,6 +35,7 @@ interface PlaceFormData {
   activityType: string;
   transportType: string;
   comments: string;
+  geoId?: string;
   emotion?: EmotionState | null;
   geoVisualization?: {
     NDI?: {
@@ -86,6 +87,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   formErrors: { [key: string]: string } = {};
   formSubmitted = false;
   geoProperties: Collection | null = null;
+  currentGeoId: string | null = null;
   showGeoInfo = false;
   loadedGeoJsonData = false;
   geoJsonLoadError = false;
@@ -117,6 +119,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   showCrosshair = false;
   crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
+  private resizeHandler?: () => void;
 
   constructor(
     private fb: FormBuilder,
@@ -197,6 +200,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
               // Set geo properties for edit mode (visualization calculation will happen after GeoJSON loads)
               if (this.loadedGeoJsonData) {
                 this.geoProperties = this.geojsonService.getPropertiesAtPoint(place.poiCoordinates[0], place.poiCoordinates[1]);
+                this.currentGeoId = this.extractGeoId(this.geoProperties);
                 this.calculateAllVisualizationData();
               }
             }
@@ -210,6 +214,10 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
           if (place.emotion) {
             this.selectedEmotion = place.emotion;
+            // Update display after a short delay to ensure the emotion grid is rendered
+            setTimeout(() => {
+              this.updateEmotionDisplay();
+            }, 100);
           }
         }
       }
@@ -224,6 +232,11 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.initializeMap();
     this.initializeEmotionGrid();
+    
+    // Update emotion display after view initialization
+    setTimeout(() => {
+      this.updateEmotionDisplay();
+    }, 100);
   }
 
   ngOnDestroy(): void {
@@ -231,6 +244,11 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.map.remove();
     }
     this.removeMarkers();
+    
+    // Remove resize event listener
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+    }
   }
 
   removeMarkers(): void {
@@ -272,6 +290,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const poiCoordinates = this.placeForm.get('poiCoordinates')?.value;
         if (poiCoordinates) {
           this.geoProperties = this.geojsonService.getPropertiesAtPoint(poiCoordinates[0], poiCoordinates[1]);
+          this.currentGeoId = this.extractGeoId(this.geoProperties);
           // Calculate visualization data after GeoJSON data is loaded
           this.calculateAllVisualizationData();
         }
@@ -415,7 +434,8 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             break;
           case 'poi':
             this.poiMarker = this.createMarker(coordinates, 'poi');
-          this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
+            this.geoProperties = this.geojsonService.getPropertiesAtPoint(coordinates[0], coordinates[1]);
+            this.currentGeoId = this.extractGeoId(this.geoProperties);
             this.placeForm.patchValue({
               poiAddress: address,
               poiCoordinates: coordinates
@@ -455,18 +475,21 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     grid.addEventListener('click', (e: MouseEvent) => {
       const rect = grid.getBoundingClientRect();
-      const selectedPoint = {
+      const pixelPoint = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       };
       
-      // Calculate emotion based on position
-      const xPercent = selectedPoint.x / rect.width;
-      const yPercent = selectedPoint.y / rect.height;
+      // Convert to normalized coordinates
+      const normalized = this.pixelToNormalized(pixelPoint.x, pixelPoint.y, rect);
+      
+      // Calculate emotion based on position (using percentages for emoji calculation)
+      const xPercent = pixelPoint.x / rect.width;
+      const yPercent = pixelPoint.y / rect.height;
       
       this.selectedEmotion = {
-        x: selectedPoint.x,
-        y: selectedPoint.y,
+        x: normalized.x, // Store normalized coordinates
+        y: normalized.y, // Store normalized coordinates
         emoji: this.getEmotionEmoji(xPercent, yPercent)
       };
 
@@ -474,6 +497,10 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         emotion: this.selectedEmotion
       });
     });
+
+    // Add resize listener to update emotion display when grid size changes
+    this.resizeHandler = this.updateEmotionDisplay.bind(this);
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   private getEmotionEmoji(x: number, y: number): string {
@@ -498,11 +525,144 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
 
+  /**
+   * Extract GeoID from geo properties
+   * @param geoProperties - Properties from getPropertiesAtPoint
+   * @returns GeoID string or null if not found
+   */
+  private extractGeoId(geoProperties: Collection | null): string | null {
+    if (!geoProperties) return null;
+    
+    // Check IL_TES_BG collection for GEOID
+    if (geoProperties['IL_TES_BG'] && geoProperties['IL_TES_BG']['GEOID']) {
+      return geoProperties['IL_TES_BG']['GEOID'];
+    }
+    
+    // Check NDI_202_Trt_IL_only collection for GeoID20_trt
+    if (geoProperties['NDI_202_Trt_IL_only'] && geoProperties['NDI_202_Trt_IL_only']['GeoID20_trt']) {
+      return geoProperties['NDI_202_Trt_IL_only']['GeoID20_trt'];
+    }
+    
+    // Check IL_PLACES_MHLTH_TRACT collection for TractFIPS
+    if (geoProperties['IL_PLACES_MHLTH_TRACT'] && geoProperties['IL_PLACES_MHLTH_TRACT']['TractFIPS']) {
+      return geoProperties['IL_PLACES_MHLTH_TRACT']['TractFIPS'];
+    }
+    
+    return null;
+  }
+
+  /**
+   * Convert pixel coordinates to normalized coordinates (-1 to 1)
+   * @param pixelX - X coordinate in pixels
+   * @param pixelY - Y coordinate in pixels
+   * @param gridRect - Grid element's bounding rectangle
+   * @returns Normalized coordinates
+   */
+  private pixelToNormalized(pixelX: number, pixelY: number, gridRect: DOMRect): { x: number, y: number } {
+    // Convert pixel position to percentage (0 to 1)
+    const xPercent = pixelX / gridRect.width;
+    const yPercent = pixelY / gridRect.height;
+    
+    // Convert percentage to normalized coordinates (-1 to 1)
+    const normalizedX = (xPercent * 2) - 1; // 0->1 becomes -1->1
+    const normalizedY = (yPercent * 2) - 1; // 0->1 becomes -1->1
+    
+    return { x: normalizedX, y: normalizedY };
+  }
+
+  /**
+   * Convert normalized coordinates (-1 to 1) to pixel coordinates
+   * @param normalizedX - Normalized X coordinate (-1 to 1)
+   * @param normalizedY - Normalized Y coordinate (-1 to 1)
+   * @param gridRect - Grid element's bounding rectangle
+   * @returns Pixel coordinates
+   */
+  private normalizedToPixel(normalizedX: number, normalizedY: number, gridRect: DOMRect): { x: number, y: number } {
+    // Convert normalized coordinates to percentage (0 to 1)
+    const xPercent = (normalizedX + 1) / 2; // -1->1 becomes 0->1
+    const yPercent = (normalizedY + 1) / 2; // -1->1 becomes 0->1
+    
+    // Convert percentage to pixel coordinates
+    const pixelX = xPercent * gridRect.width;
+    const pixelY = yPercent * gridRect.height;
+    
+    return { x: pixelX, y: pixelY };
+  }
+
+  /**
+   * Update emotion display based on current grid size
+   */
+  private updateEmotionDisplay(): void {
+    if (this.selectedEmotion && this.emotionGrid) {
+      const gridRect = this.emotionGrid.nativeElement.getBoundingClientRect();
+      const pixelCoords = this.normalizedToPixel(
+        this.selectedEmotion.x, 
+        this.selectedEmotion.y, 
+        gridRect
+      );
+      
+      // Update the display coordinates (these are used for positioning the emotion indicator)
+      this.selectedEmotion = {
+        ...this.selectedEmotion,
+        x: this.selectedEmotion.x, // Keep normalized coordinates for storage
+        y: this.selectedEmotion.y, // Keep normalized coordinates for storage
+        emoji: this.selectedEmotion.emoji
+      };
+    }
+  }
+
+  /**
+   * Get pixel coordinates for display purposes
+   */
+  getEmotionDisplayCoordinates(): { x: number, y: number } | null {
+    if (!this.selectedEmotion || !this.emotionGrid) {
+      return null;
+    }
+    
+    const gridRect = this.emotionGrid.nativeElement.getBoundingClientRect();
+    return this.normalizedToPixel(this.selectedEmotion.x, this.selectedEmotion.y, gridRect);
+  }
+
+  /**
+   * Check if the given label is already in use by another place
+   */
+  private isLabelNotUnique(label: string): boolean {
+    if (!label) return false;
+    
+    const trimmedLabel = label.trim();
+    const currentPlaceId = this.isEditMode ? this.route.snapshot.queryParams['placeId'] : null;
+    
+    // Check all places across all dates
+    const allDates = this.placesService.getAllDates();
+    for (const date of allDates) {
+      const places = this.placesService.getPlacesByDate(date);
+      for (const place of places) {
+        // Skip the current place being edited
+        if (this.isEditMode && place.id === currentPlaceId) {
+          continue;
+        }
+        
+        // Check if labels match (case-insensitive)
+        if (place.placeLabel && place.placeLabel.trim().toLowerCase() === trimmedLabel.toLowerCase()) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
   validateForm(): boolean {
     this.formErrors = {};
     
     if (this.placeForm.get('placeLabel')?.errors?.['required']) {
-      this.formErrors['placeLabel'] = 'Please enter a name for this place';
+      this.formErrors['placeLabel'] = 'Please enter a label for this place';
+    } else {
+      // Check for unique label validation
+      const currentLabel = this.placeForm.get('placeLabel')?.value?.trim();
+      if (currentLabel && this.isLabelNotUnique(currentLabel)) {
+        this.formErrors['placeLabel'] = 'This label already exists to another place. Please choose a different label.';
+      }
     }
     
     if (this.placeForm.get('fromAddress')?.errors?.['required']) {
@@ -585,6 +745,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const placeWithGeoData = {
           ...formData,
           emotion: formData.emotion || undefined,
+          geoId: this.currentGeoId || undefined,
           geoVisualization
         };
         

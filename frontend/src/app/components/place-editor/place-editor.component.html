@@ -268,7 +268,9 @@
                             <div class="horizontal"></div>
                             <div class="vertical"></div>
                         </div>
-                        <div class="emotion-indicator" *ngIf="selectedEmotion" [style.left.px]="selectedEmotion.x" [style.top.px]="selectedEmotion.y">
+                        <div class="emotion-indicator" *ngIf="selectedEmotion && getEmotionDisplayCoordinates()" 
+                             [style.left.px]="getEmotionDisplayCoordinates()!.x" 
+                             [style.top.px]="getEmotionDisplayCoordinates()!.y">
                             <div class="emoji">{{selectedEmotion.emoji}}</div>
                         </div>
                     </div>

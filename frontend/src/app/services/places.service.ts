@@ -17,6 +17,7 @@ export interface Place {
   activityType: string;
   transportType: string;
   comments: string;
+  geoId?: string; // GeoID from any of the geo files
   emotion?: {
     x: number;
     y: number;

@@ -258,18 +258,24 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public downloadAsCSV(): void {
-    // Define the CSV headers
+    // Define the CSV headers with more detailed information
     const headers = [
       'Date', 
       'Activity Number', 
       'Activity Type', 
       'Place Name', 
-      'Start Time', 
-      'End Time', 
-      'From Location', 
-      'To Location', 
+      'From Address',
+      'From Address Coordinates',
+      'Leave Time',
+      'POI Address',
+      'POI Coordinates',
+      'POI GeoID',
+      'Duration at POI (minutes)',
+      'To Address',
+      'To Address Coordinates',
+      'Arrive Time',
       'Transportation', 
-      'Feeling', 
+      'Emotion Grid Coordinates', 
       'Comments'
     ];
     
@@ -280,17 +286,35 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.journeyDates.forEach(date => {
       const places = this.placesByDate.get(date) || [];
       places.forEach((place, index) => {
+        // Format coordinates as "lat,lng" strings
+        const fromCoords = place.fromCoordinates ? 
+          `"${place.fromCoordinates[1]},${place.fromCoordinates[0]}"` : '';
+        const poiCoords = place.poiCoordinates ? 
+          `"${place.poiCoordinates[1]},${place.poiCoordinates[0]}"` : '';
+        const toCoords = place.toCoordinates ? 
+          `"${place.toCoordinates[1]},${place.toCoordinates[0]}"` : '';
+        
+        // Format emotion coordinates as "(x,y)" string
+        const emotionCoords = place.emotion ? 
+          `"(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})"` : '';
+        
         const rowData = [
           date,
           (index + 1).toString(),
           this.escapeCSVField(place.activityType),
           this.escapeCSVField(place.placeLabel || ''),
-          this.escapeCSVField(place.leaveTime || ''),
-          this.escapeCSVField(place.arriveTime || ''),
           this.escapeCSVField(place.fromAddress),
+          fromCoords,
+          this.escapeCSVField(place.leaveTime || ''),
+          this.escapeCSVField(place.poiAddress),
+          poiCoords,
+          this.escapeCSVField(place.geoId || ''),
+          place.timeSpentAtPoi ? place.timeSpentAtPoi.toString() : '',
           this.escapeCSVField(place.toAddress),
+          toCoords,
+          this.escapeCSVField(place.arriveTime || ''),
           this.escapeCSVField(place.transportType),
-          this.escapeCSVField(place.emotion?.emoji || ''),
+          emotionCoords,
           this.escapeCSVField(place.comments || '')
         ];
         csvContent += rowData.join(',') + '\n';
