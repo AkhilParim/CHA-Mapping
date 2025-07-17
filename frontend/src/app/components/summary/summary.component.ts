@@ -277,7 +277,10 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
       'Transportation', 
       'Feeling',
       'Emotion Grid Coordinates', 
-      'Comments'
+      'Comments',
+      'NDI (Neighborhood Deprivation Index)',
+      'TES (Tree Equity Score)',
+      'MHLTH (Mental Health Crude Prevalence)'
     ];
     
     // Create CSV content starting with headers
@@ -300,6 +303,11 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
         const emotionCoords = place.emotion ? 
           `"(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})"` : '';
         
+        // Format geo values
+        const ndiValue = place.geoValues?.NDI ? place.geoValues.NDI.toString() : '';
+        const tesValue = place.geoValues?.tes ? place.geoValues.tes.toString() : '';
+        const mhlthValue = place.geoValues?.MHLTH_CrudePrev ? place.geoValues.MHLTH_CrudePrev.toString() : '';
+
         const rowData = [
           date,
           (index + 1).toString(),
@@ -318,7 +326,10 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
           this.escapeCSVField(place.transportType),
           this.escapeCSVField(emotionText),
           emotionCoords,
-          this.escapeCSVField(place.comments || '')
+          this.escapeCSVField(place.comments || ''),
+          ndiValue,
+          tesValue,
+          mhlthValue
         ];
         csvContent += rowData.join(',') + '\n';
       });

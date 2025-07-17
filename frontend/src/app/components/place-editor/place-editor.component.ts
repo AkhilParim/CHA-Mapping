@@ -58,6 +58,11 @@ interface PlaceFormData {
       hasData: boolean;
     };
   };
+  geoValues?: {
+    NDI?: number | null;
+    tes?: number | null;
+    MHLTH_CrudePrev?: number | null;
+  };
 }
 
 @Component({
@@ -729,12 +734,20 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           tes: this.visualizationData.tes,
           MHLTH_CrudePrev: this.visualizationData.MHLTH_CrudePrev
         };
+
+        // Extract raw geo values
+        const geoValues = {
+          NDI: this.geoProperties?.['NDI_202_Trt_IL_only']?.['NDI'] || null,
+          tes: this.geoProperties?.['IL_TES_BG']?.['tes'] || null,
+          MHLTH_CrudePrev: this.geoProperties?.['IL_PLACES_MHLTH_TRACT']?.['MHLTH_CrudePrev'] || null
+        };
         
         const placeWithGeoData = {
           ...formData,
           emotion: formData.emotion || undefined,
           geoId: this.currentGeoId || undefined,
-          geoVisualization
+          geoVisualization,
+          geoValues
         };
         
         if (this.isEditMode) {
@@ -788,11 +801,14 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.visualizationData[type as keyof typeof this.visualizationData];
   }
 
-  private calculateBarPosition(value: number, lowest: number, highest: number): number {
-    const range = highest - lowest;
-    const segmentSize = range / 3;
-    const relativePosition = value - lowest;
-    return Math.min(Math.floor(relativePosition / segmentSize) + 1, 3);
+  private calculateBarPosition(value: number, tertile33: number, tertile67: number): number {
+    if (value <= tertile33) {
+      return 1;
+    } else if (value <= tertile67) {
+      return 2;
+    } else {
+      return 3;
+    }
   }
 
   /**
@@ -823,32 +839,32 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     let value: number | null = null;
-    let lowest: number | null = null;
-    let highest: number | null = null;
+    let tertile33: number | null = null;
+    let tertile67: number | null = null;
     let leftLabel = '';
     let rightLabel = '';
 
     if (type === 'NDI') {
       value = this.geoProperties['NDI_202_Trt_IL_only']?.['NDI'] || null;
-      lowest = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['lowest_NDI'] || null;
-      highest = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['highest_NDI'] || null;
+      tertile33 = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['tertile_33'] || null;
+      tertile67 = this.geojsonService.averages['NDI_202_Trt_IL_only']?.['tertile_67'] || null;
       leftLabel = 'Challenged community';
       rightLabel = 'Thriving community';
     } else if (type === 'tes') {
       value = this.geoProperties['IL_TES_BG']?.['tes'] || null;
-      lowest = this.geojsonService.averages['IL_TES_BG']?.['lowest_tes'] || null;
-      highest = this.geojsonService.averages['IL_TES_BG']?.['highest_tes'] || null;
+      tertile33 = this.geojsonService.averages['IL_TES_BG']?.['tertile_33'] || null;
+      tertile67 = this.geojsonService.averages['IL_TES_BG']?.['tertile_67'] || null;
       leftLabel = 'Needs more trees';
       rightLabel = 'Most trees';
     } else if (type === 'MHLTH_CrudePrev') {
       value = this.geoProperties['IL_PLACES_MHLTH_TRACT']?.['MHLTH_CrudePrev'] || null;
-      lowest = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['lowest_MHLTH_CrudePrev'] || null;
-      highest = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['highest_MHLTH_CrudePrev'] || null;
+      tertile33 = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['tertile_33'] || null;
+      tertile67 = this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']?.['tertile_67'] || null;
       leftLabel = 'Stressful vibes';
       rightLabel = 'Good vibes';
     }
 
-    if (value === null || lowest === null || highest === null) {
+    if (value === null || tertile33 === null || tertile67 === null) {
       return { 
         barNumber: null, 
         leftLabel, 
@@ -857,7 +873,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       };
     }
 
-    const barNumber = this.calculateBarPosition(value, lowest, highest);
+    const barNumber = this.calculateBarPosition(value, tertile33, tertile67);
 
     return { 
       barNumber, 
@@ -916,9 +932,7 @@ emotions) was not good for 14 or more days during the past 30 days.`
       modalData = {
         ...modalData,
         label: 'Community Conditions',
-        value: this.geoProperties['NDI_202_Trt_IL_only']['NDI'],
-        lowest: this.geojsonService.averages['NDI_202_Trt_IL_only']['lowest_NDI'],
-        highest: this.geojsonService.averages['NDI_202_Trt_IL_only']['highest_NDI']
+        value: this.geoProperties['NDI_202_Trt_IL_only']['NDI']
       };
     }
     
@@ -927,9 +941,7 @@ emotions) was not good for 14 or more days during the past 30 days.`
       modalData = {
         ...modalData,
         label: 'Neighborhood Greenness',
-        value: this.geoProperties['IL_TES_BG']['tes'],
-        lowest: this.geojsonService.averages['IL_TES_BG']['lowest_tes'],
-        highest: this.geojsonService.averages['IL_TES_BG']['highest_tes']
+        value: this.geoProperties['IL_TES_BG']['tes']
       };
     }
     
@@ -938,9 +950,7 @@ emotions) was not good for 14 or more days during the past 30 days.`
       modalData = {
         ...modalData,
         label: 'Mental Wellbeing',
-        value: this.geoProperties['IL_PLACES_MHLTH_TRACT']['MHLTH_CrudePrev'],
-        lowest: this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']['lowest_MHLTH_CrudePrev'],
-        highest: this.geojsonService.averages['IL_PLACES_MHLTH_TRACT']['highest_MHLTH_CrudePrev']
+        value: this.geoProperties['IL_PLACES_MHLTH_TRACT']['MHLTH_CrudePrev']
       };
     }
 

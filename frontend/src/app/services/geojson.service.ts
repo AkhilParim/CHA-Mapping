@@ -55,7 +55,7 @@ export class GeojsonService {
         this.ndiFeatureCollection = ndi;
         this.ilTesBgCollection = ilTesBg;
         this.ilPlacesMhlthTractCollection = ilPlacesMhlth;
-        this.calculateStateAverages();
+        this.calculateTertiles();
         this.loaded = true;
       }),
       map(results => results)
@@ -103,63 +103,72 @@ export class GeojsonService {
     return results;
   }
 
-  calculateStateAverages(): void {
-    // Calculate NDI averages
+  calculateTertiles(): void {
+    // Calculate NDI tertiles
     if (this.ndiFeatureCollection) {
-      let lowestNDI = 100; let highestNDI = 0;
-      this.averages['NDI_202_Trt_IL_only']['state_average'] = this.ndiFeatureCollection.features.reduce((acc, feature) => {
+      const ndiValues: number[] = [];
+      
+      this.ndiFeatureCollection.features.forEach(feature => {
         if (feature['properties']!['stabbr'] == 'IL' && feature['properties']!['NDI'] != null) {
-          if (feature['properties']!['NDI'] < lowestNDI) {
-            lowestNDI = feature['properties']!['NDI'];
-          }
-          if (feature['properties']!['NDI'] > highestNDI) {
-            highestNDI = feature['properties']!['NDI'];
-          }
+          const ndiValue = feature['properties']!['NDI'];
+          ndiValues.push(ndiValue);
         }
-        return acc + feature.properties!['NDI'];
-      }, 0) / this.ndiFeatureCollection.features.length;
-      this.averages['NDI_202_Trt_IL_only']['lowest_NDI'] = lowestNDI;
-      this.averages['NDI_202_Trt_IL_only']['highest_NDI'] = highestNDI;
+      });
+      
+      if (ndiValues.length > 0) {
+        ndiValues.sort((a, b) => a - b);
+        this.averages['NDI_202_Trt_IL_only']['tertile_33'] = this.calculatePercentile(ndiValues, 33);
+        this.averages['NDI_202_Trt_IL_only']['tertile_67'] = this.calculatePercentile(ndiValues, 67);
+      }
     }
 
-    // Calculate Tree Equity Score (TES) averages
+    // Calculate Tree Equity Score (TES) tertiles
     if (this.ilTesBgCollection) {
-      let lowestTES = 100; let highestTES = 0;
-      this.averages['IL_TES_BG']['state_average'] = this.ilTesBgCollection.features.reduce((acc, feature) => {
+      const tesValues: number[] = [];
+      
+      this.ilTesBgCollection.features.forEach(feature => {
         if (feature.properties!['tes'] != null) {
           const tesValue = feature.properties!['tes'];
-          if (tesValue < lowestTES) {
-            lowestTES = tesValue;
-          }
-          if (tesValue > highestTES) {
-            highestTES = tesValue;
-          }
-          return acc + tesValue;
+          tesValues.push(tesValue);
         }
-        return acc;
-      }, 0) / this.ilTesBgCollection.features.filter(f => f.properties!['tes'] != null).length;
-      this.averages['IL_TES_BG']['lowest_tes'] = lowestTES;
-      this.averages['IL_TES_BG']['highest_tes'] = highestTES;
+      });
+      
+      if (tesValues.length > 0) {
+        tesValues.sort((a, b) => a - b);
+        this.averages['IL_TES_BG']['tertile_33'] = this.calculatePercentile(tesValues, 33);
+        this.averages['IL_TES_BG']['tertile_67'] = this.calculatePercentile(tesValues, 67);
+      }
     }
 
-    // Calculate Mental Health Crude Prevalence averages
+    // Calculate Mental Health Crude Prevalence tertiles
     if (this.ilPlacesMhlthTractCollection) {
-      let lowestMHLTH = 100; let highestMHLTH = 0;
-      this.averages['IL_PLACES_MHLTH_TRACT']['state_average'] = this.ilPlacesMhlthTractCollection.features.reduce((acc, feature) => {
+      const mhlthValues: number[] = [];
+      
+      this.ilPlacesMhlthTractCollection.features.forEach(feature => {
         if (feature.properties!['MHLTH_CrudePrev'] != null) {
           const mhlthValue = feature.properties!['MHLTH_CrudePrev'];
-          if (mhlthValue < lowestMHLTH) {
-            lowestMHLTH = mhlthValue;
-          }
-          if (mhlthValue > highestMHLTH) {
-            highestMHLTH = mhlthValue;
-          }
-          return acc + mhlthValue;
+          mhlthValues.push(mhlthValue);
         }
-        return acc;
-      }, 0) / this.ilPlacesMhlthTractCollection.features.filter(f => f.properties!['MHLTH_CrudePrev'] != null).length;
-      this.averages['IL_PLACES_MHLTH_TRACT']['lowest_MHLTH_CrudePrev'] = lowestMHLTH;
-      this.averages['IL_PLACES_MHLTH_TRACT']['highest_MHLTH_CrudePrev'] = highestMHLTH;
+      });
+      
+      if (mhlthValues.length > 0) {
+        mhlthValues.sort((a, b) => a - b);
+        this.averages['IL_PLACES_MHLTH_TRACT']['tertile_33'] = this.calculatePercentile(mhlthValues, 33);
+        this.averages['IL_PLACES_MHLTH_TRACT']['tertile_67'] = this.calculatePercentile(mhlthValues, 67);
+      }
     }
+  }
+
+  private calculatePercentile(sortedValues: number[], percentile: number): number {
+    const index = (percentile / 100) * (sortedValues.length - 1);
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    
+    if (lower === upper) {
+      return sortedValues[lower];
+    }
+    
+    const weight = index - lower;
+    return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
   }
 } 

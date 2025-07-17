@@ -43,6 +43,11 @@ export interface Place {
       hasData: boolean;
     };
   };
+  geoValues?: {
+    NDI?: number | null;
+    tes?: number | null;
+    MHLTH_CrudePrev?: number | null;
+  };
 }
 
 @Injectable({

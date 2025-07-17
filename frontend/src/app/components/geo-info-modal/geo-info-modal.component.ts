@@ -10,8 +10,6 @@ interface GeoInfoData {
   label: string;
   type?: string;
   value?: number;
-  lowest?: number;
-  highest?: number;
   barNumber?: number; // Pre-calculated bar position
   leftLabel?: string; // Dynamic left label
   rightLabel?: string; // Dynamic right label
