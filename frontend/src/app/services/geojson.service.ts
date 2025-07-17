@@ -103,7 +103,7 @@ export class GeojsonService {
     return results;
   }
 
-  calculateStateAverages(): void {  // TODO: I think this method is not required. But when I remove it, the visualization is not working.
+  calculateStateAverages(): void {
     // Calculate NDI averages
     if (this.ndiFeatureCollection) {
       let lowestNDI = 100; let highestNDI = 0;

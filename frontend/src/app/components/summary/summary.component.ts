@@ -275,6 +275,7 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
       'To Address Coordinates',
       'Arrive Time',
       'Transportation', 
+      'Feeling',
       'Emotion Grid Coordinates', 
       'Comments'
     ];
@@ -294,7 +295,8 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
         const toCoords = place.toCoordinates ? 
           `"${place.toCoordinates[1]},${place.toCoordinates[0]}"` : '';
         
-        // Format emotion coordinates as "(x,y)" string
+        // Format emotion text and coordinates
+        const emotionText = place.emotion ? (place.emotion.text) : '';
         const emotionCoords = place.emotion ? 
           `"(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})"` : '';
         
@@ -314,6 +316,7 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
           toCoords,
           this.escapeCSVField(place.arriveTime || ''),
           this.escapeCSVField(place.transportType),
+          this.escapeCSVField(emotionText),
           emotionCoords,
           this.escapeCSVField(place.comments || '')
         ];

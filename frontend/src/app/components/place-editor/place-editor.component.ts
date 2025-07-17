@@ -17,7 +17,7 @@ import { Collection } from '../../services/geojson.service';
 interface EmotionState {
   x: number; // normalized coordinate: -1 to 1 (left to right)
   y: number; // normalized coordinate: -1 to 1 (top to bottom)
-  emoji: string;
+  text: string; // descriptive text of the emotion
 }
 
 interface PlaceFormData {
@@ -105,15 +105,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     'Healthcare',
     'Pharmacy',
     'Grocery',
-    'Wellness',
-    'Other'
+    'Wellness'
   ];
 
   transportTypes = [
-    'Drive',
+    'Walk',
+    'Bicycle',
+    'Drove Myself',
+    'Driven by Someone Else',
     'Bus',
-    'Train',
-    'Other'
+    'Train'
   ];
 
   // Emotion grid properties
@@ -214,7 +215,12 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           });
 
           if (place.emotion) {
-            this.selectedEmotion = place.emotion;
+            // Ensure text property exists for backward compatibility
+            this.selectedEmotion = {
+              x: place.emotion.x,
+              y: place.emotion.y,
+              text: place.emotion.text || this.getEmotionText((place.emotion.x + 1) / 2, (place.emotion.y + 1) / 2)
+            };
             // Update display after a short delay to ensure the emotion grid is rendered
             setTimeout(() => {
               this.updateEmotionDisplay();
@@ -491,7 +497,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedEmotion = {
         x: normalized.x, // Store normalized coordinates
         y: normalized.y, // Store normalized coordinates
-        emoji: this.getEmotionEmoji(xPercent, yPercent)
+        text: this.getEmotionText(xPercent, yPercent)
       };
 
       this.placeForm.patchValue({
@@ -504,25 +510,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('resize', this.resizeHandler);
   }
 
-  private getEmotionEmoji(x: number, y: number): string {
-    // x: 0 = dissatisfied, 1 = satisfied
-    // y: 0 = calm, 1 = stressed
-    
-    // Divide the grid into a 3x3 matrix for more nuanced emotions
-    if (x < 0.33) {
-      if (y < 0.33) return '😌'; // Very calm but dissatisfied
-      if (y < 0.66) return '😕'; // Neutral stress but dissatisfied
-      return '😫'; // Very stressed and dissatisfied
-    } else if (x < 0.66) {
-      if (y < 0.33) return '😐'; // Very calm and neutral satisfaction
-      if (y < 0.66) return '😶'; // Neutral stress and satisfaction
-      return '😰'; // Very stressed and neutral satisfaction
-    } else {
-      if (y < 0.33) return '😊'; // Very calm and satisfied
-      if (y < 0.66) return '🙂'; // Neutral stress and satisfied
-      return '😅'; // Very stressed but satisfied
-    }
-  }
+
 
 
 
@@ -606,8 +594,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedEmotion = {
         ...this.selectedEmotion,
         x: this.selectedEmotion.x, // Keep normalized coordinates for storage
-        y: this.selectedEmotion.y, // Keep normalized coordinates for storage
-        emoji: this.selectedEmotion.emoji
+        y: this.selectedEmotion.y // Keep normalized coordinates for storage
       };
     }
   }
@@ -1065,5 +1052,36 @@ emotions) was not good for 14 or more days during the past 30 days.`
     }
     
     this.fitMapToMarkers();
+  }
+
+  private getEmotionText(x: number, y: number): string {
+    // x: 0 = dissatisfied, 1 = satisfied
+    // y: 0 = calm, 1 = stressed
+    
+    // Determine satisfaction level
+    let satisfactionLevel = '';
+    if (x < 0.33) {
+      satisfactionLevel = 'Very dissatisfied';
+    } else if (x < 0.66) {
+      satisfactionLevel = 'Somewhat dissatisfied';
+    } else if (x < 0.85) {
+      satisfactionLevel = 'Somewhat satisfied';
+    } else {
+      satisfactionLevel = 'Very satisfied';
+    }
+    
+    // Determine stress level
+    let stressLevel = '';
+    if (y < 0.33) {
+      stressLevel = 'very calm';
+    } else if (y < 0.66) {
+      stressLevel = 'somewhat calm';
+    } else if (y < 0.85) {
+      stressLevel = 'somewhat stressed';
+    } else {
+      stressLevel = 'very stressed';
+    }
+    
+    return `${satisfactionLevel} and ${stressLevel}`;
   }
 }

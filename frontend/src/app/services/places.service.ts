@@ -21,7 +21,7 @@ export interface Place {
   emotion?: {
     x: number;
     y: number;
-    emoji: string;
+    text: string;
   };
   geoVisualization?: {
     NDI?: {
