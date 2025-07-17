@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 import { GeoInfoModalComponent } from '../geo-info-modal/geo-info-modal.component';
+import { MapSelectorDialogComponent, MapSelectorData, MapSelectorResult } from '../map-selector-dialog/map-selector-dialog.component';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -967,5 +968,102 @@ emotions) was not good for 14 or more days during the past 30 days.`
       exitAnimationDuration: '200ms',
       data: modalData
     });
+  }
+
+  openMapSelector(addressType: 'from' | 'poi' | 'to'): void {
+    const currentCoords = this.placeForm.get(`${addressType}Coordinates`)?.value;
+    const currentAddress = this.placeForm.get(`${addressType}Address`)?.value;
+    
+    const dialogData: MapSelectorData = {
+      addressType,
+      currentCoordinates: currentCoords,
+      currentAddress: currentAddress
+    };
+
+    const dialogRef = this.dialog.open(MapSelectorDialogComponent, {
+      width: '80vw',
+      height: '80vh',
+      maxWidth: '1000px',
+      maxHeight: '80vh',
+      data: dialogData
+    });
+
+    dialogRef.afterClosed().subscribe((result: MapSelectorResult | undefined) => {
+      if (result) {
+        this.updateAddressFromMap(addressType, result);
+      }
+    });
+  }
+
+  private updateAddressFromMap(addressType: 'from' | 'poi' | 'to', result: MapSelectorResult): void {
+    // Remove existing marker of this type
+    let currentMarker;
+    switch (addressType) {
+      case 'from':
+        currentMarker = this.fromMarker;
+        break;
+      case 'poi':
+        currentMarker = this.poiMarker;
+        break;
+      case 'to':
+        currentMarker = this.toMarker;
+        break;
+    }
+    
+    if (currentMarker) {
+      currentMarker.remove();
+    }
+
+    // Update form with selected address and coordinates
+    switch (addressType) {
+      case 'from':
+        this.fromMarker = this.createMarker(result.coordinates, 'from');
+        this.placeForm.patchValue({
+          fromAddress: result.address,
+          fromCoordinates: result.coordinates
+        });
+        // Update the search box value
+        if (this.fromAddressSearch?.nativeElement) {
+          const input = this.fromAddressSearch.nativeElement.querySelector('input');
+          if (input) {
+            input.value = result.address;
+          }
+        }
+        break;
+      case 'poi':
+        this.poiMarker = this.createMarker(result.coordinates, 'poi');
+        this.geoProperties = this.geojsonService.getPropertiesAtPoint(result.coordinates[0], result.coordinates[1]);
+        this.currentGeoId = this.extractGeoId(this.geoProperties);
+        this.placeForm.patchValue({
+          poiAddress: result.address,
+          poiCoordinates: result.coordinates
+        });
+        // Update the search box value
+        if (this.poiAddressSearch?.nativeElement) {
+          const input = this.poiAddressSearch.nativeElement.querySelector('input');
+          if (input) {
+            input.value = result.address;
+          }
+        }
+        // Calculate visualization data when POI coordinates changes
+        this.calculateAllVisualizationData();
+        break;
+      case 'to':
+        this.toMarker = this.createMarker(result.coordinates, 'to');
+        this.placeForm.patchValue({
+          toAddress: result.address,
+          toCoordinates: result.coordinates
+        });
+        // Update the search box value
+        if (this.toAddressSearch?.nativeElement) {
+          const input = this.toAddressSearch.nativeElement.querySelector('input');
+          if (input) {
+            input.value = result.address;
+          }
+        }
+        break;
+    }
+    
+    this.fitMapToMarkers();
   }
 }

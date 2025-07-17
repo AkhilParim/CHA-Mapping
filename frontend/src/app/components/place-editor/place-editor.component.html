@@ -17,6 +17,12 @@
                         <label>From (A): </label>
                         <div class="search-wrapper">
                             <mapbox-search-box #fromAddressSearch class="search-container" [class.error]="formErrors['fromAddress']"></mapbox-search-box>
+                            <button type="button" 
+                                    class="place-on-map-btn"
+                                    (click)="openMapSelector('from')"
+                                    title="Select location on map">
+                                📍
+                            </button>
                             <div class="search-loader" *ngIf="isSearchLoading">
                                 <div class="loader"></div>
                             </div>
@@ -41,6 +47,12 @@
                                 <label>Point of Interest (B): </label>
                                 <div class="search-wrapper">
                                     <mapbox-search-box #poiAddressSearch class="search-container" [class.error]="formErrors['poiAddress']"></mapbox-search-box>
+                                    <button type="button" 
+                                            class="place-on-map-btn"
+                                            (click)="openMapSelector('poi')"
+                                            title="Select location on map">
+                                        📍
+                                    </button>
                                     <div class="search-loader" *ngIf="isSearchLoading">
                                         <div class="loader"></div>
                                     </div>
@@ -65,6 +77,12 @@
                                 <label>To (C): </label>
                         <div class="search-wrapper">
                             <mapbox-search-box #toAddressSearch class="search-container" [class.error]="formErrors['toAddress']"></mapbox-search-box>
+                            <button type="button" 
+                                    class="place-on-map-btn"
+                                    (click)="openMapSelector('to')"
+                                    title="Select location on map">
+                                📍
+                            </button>
                             <div class="search-loader" *ngIf="isSearchLoading">
                                 <div class="loader"></div>
                             </div>
