@@ -10,7 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PlacesService, Place } from '../../services/places.service';
+import { PlacesService, Place, LocationGroup } from '../../services/places.service';
 import { Subscription } from 'rxjs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../components/confirmation-dialog/confirmation-dialog.component';
@@ -50,6 +50,11 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
   private subscription: Subscription | null = null;
   private toMarkers: mapboxgl.Marker[] = [];
   private markerAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  
+  // Location grouping properties
+  locationGroups: LocationGroup[] = [];
+  highlightedPlaces: Set<string> = new Set();
+  highlightedMarkerAlphabet: string | null = null;
 
   constructor(
     private ngZone: NgZone, 
@@ -76,6 +81,8 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
       }
       if (this.activeDate) {
         this.places = this.placesService.getPlacesByDate(this.activeDate);
+        // Group places by location
+        this.groupPlacesByLocation();
         // Wait for the DOM to update before scrolling and rendering markers
         setTimeout(() => {
           this.scrollToActiveDate();
@@ -83,6 +90,7 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
         }, 0);
       } else {
         this.places = [];
+        this.locationGroups = [];
         this.renderToMarkers();
       }
     });
@@ -172,13 +180,32 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
   setActiveDate(date: string): void {
     this.placesService.setSelectedDate(date);
     this.selectedPlace = null; // Reset selected place when changing dates
+    // Clear highlights when changing dates
+    this.highlightedPlaces.clear();
+    this.highlightedMarkerAlphabet = null;
+    this.locationGroups.forEach(g => g.isHighlighted = false);
     // Wait for the DOM to update
     setTimeout(() => this.scrollToActiveDate(), 0);
   }
 
   selectPlace(place: Place): void {
+    // Clear all group highlights
+    this.highlightedPlaces.clear();
+    this.locationGroups.forEach(g => g.isHighlighted = false);
+    
     this.selectedPlace = this.selectedPlace === place ? null : place;
-    this.highlightSelectedMarker();
+    
+    if (this.selectedPlace) {
+      // Find the group that contains this place and highlight its marker
+      const group = this.locationGroups.find(g => g.places.includes(this.selectedPlace!));
+      if (group) {
+        this.highlightedMarkerAlphabet = group.alphabet;
+      }
+    } else {
+      this.highlightedMarkerAlphabet = null;
+    }
+    
+    this.updateMarkerHighlighting();
   }
 
   private scrollToActiveDate(): void {
@@ -317,35 +344,47 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
   private renderToMarkers(): void {
     if (!this.map) return;
     this.removeToMarkers();
-    if (!this.places || this.places.length === 0) return;
+    if (!this.locationGroups || this.locationGroups.length === 0) return;
+    
     let bounds: mapboxgl.LngLatBounds | null = null;
-    this.places.forEach((place, idx) => {
-      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
-        const el = document.createElement('div');
-        el.className = 'custom-marker to-marker';
-        el.innerHTML = this.markerAlphabet[idx % this.markerAlphabet.length];
-        
-        // Add click event listener to marker for bidirectional interaction
-        el.addEventListener('click', (event) => {
-          event.stopPropagation();
-          this.selectPlace(place);
-        });
-        
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat(place.poiCoordinates)
-          .addTo(this.map);
-        this.toMarkers.push(marker);
-        if (!bounds) {
-          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
-        } else {
-          bounds.extend(place.poiCoordinates);
-        }
+    
+    this.locationGroups.forEach((group) => {
+      const el = document.createElement('div');
+      el.className = 'custom-marker to-marker';
+      el.innerHTML = group.alphabet;
+      
+      // Add badge if multiple places at same location
+      if (group.places.length > 1) {
+        const badge = document.createElement('span');
+        badge.className = 'marker-badge';
+        badge.textContent = group.places.length.toString();
+        el.appendChild(badge);
+      }
+      
+      // Add click event listener to marker
+      el.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.onMarkerClick(group);
+      });
+      
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(group.coordinates)
+        .addTo(this.map);
+      this.toMarkers.push(marker);
+      
+      if (!bounds) {
+        bounds = new mapboxgl.LngLatBounds(group.coordinates, group.coordinates);
+      } else {
+        bounds.extend(group.coordinates);
       }
     });
+    
     if (bounds && this.toMarkers.length > 0) {
       this.map.fitBounds(bounds, { padding: 100, maxZoom: 15 });
     }
-    this.highlightSelectedMarker();
+    
+    // Apply initial highlighting
+    this.updateMarkerHighlighting();
   }
 
   private removeToMarkers(): void {
@@ -353,15 +392,62 @@ export class JourneyPlannerComponent implements OnInit, AfterViewInit, OnDestroy
     this.toMarkers = [];
   }
 
-  private highlightSelectedMarker(): void {
-    this.toMarkers.forEach((marker, idx) => {
+
+
+  /**
+   * Group places by location using the service
+   */
+  private groupPlacesByLocation(): void {
+    this.locationGroups = this.placesService.groupPlacesByLocation(this.places, this.markerAlphabet);
+  }
+
+  /**
+   * Handle marker click - toggle highlighting all places in the group
+   */
+  private onMarkerClick(group: LocationGroup): void {
+    // Clear individual place selection when marker is clicked
+    this.selectedPlace = null;
+    
+    if (group.isHighlighted) {
+      // Remove highlighting
+      this.highlightedPlaces.clear();
+      this.highlightedMarkerAlphabet = null;
+      group.isHighlighted = false;
+    } else {
+      // Clear previous highlights
+      this.highlightedPlaces.clear();
+      this.locationGroups.forEach(g => g.isHighlighted = false);
+      
+      // Add highlighting for this group
+      group.places.forEach(place => this.highlightedPlaces.add(place.id));
+      this.highlightedMarkerAlphabet = group.alphabet;
+      group.isHighlighted = true;
+    }
+    
+    this.updateMarkerHighlighting();
+  }
+
+  /**
+   * Update marker highlighting without recreating markers
+   */
+  private updateMarkerHighlighting(): void {
+    this.toMarkers.forEach((marker, index) => {
       const el = marker.getElement();
       if (!el) return;
-      if (this.selectedPlace && this.places[idx] === this.selectedPlace) {
+      
+      const group = this.locationGroups[index];
+      if (this.highlightedMarkerAlphabet === group.alphabet) {
         el.classList.add('selected-marker');
       } else {
         el.classList.remove('selected-marker');
       }
     });
+  }
+
+  /**
+   * Check if a place is highlighted
+   */
+  isPlaceHighlighted(place: Place): boolean {
+    return this.highlightedPlaces.has(place.id);
   }
 }

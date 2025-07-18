@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { Place } from '../../services/places.service';
+import { Place, PlacesService, LocationGroup } from '../../services/places.service';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -51,25 +51,34 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   initialCoordinates: [number, number] = [-87.65888830611969, 41.874497559910914]; // UIC Innovation Center Coordinates
   selectedPlaceId: string | null = null;
   
+  // New properties for location grouping
+  locationGroups: LocationGroup[] = [];
+  private expandedPlaceIds: Set<string> = new Set();
+  private highlightedMarkerAlphabet: string | null = null;
+  
   constructor(
     public dialogRef: MatDialogRef<SummaryComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: SummaryData
+    @Inject(MAT_DIALOG_DATA) public data: SummaryData,
+    private placesService: PlacesService
   ) {}
 
   ngOnInit(): void {
     this.journeyDates = this.data.journeyDates;
     this.placesByDate = this.data.placesByDate;
     
-    // Calculate total places and create flat array of all places with alphabet indices
+    // Calculate total places and create flat array of all places
     this.totalPlaces = Array.from(this.placesByDate.values())
       .reduce((total, places) => total + places.length, 0);
     
-    // Create a flat array of all places in order for alphabet mapping
+    // Create a flat array of all places in order
     this.allPlaces = [];
     this.journeyDates.forEach(date => {
       const places = this.placesByDate.get(date) || [];
       this.allPlaces.push(...places);
     });
+    
+    // Group places by location
+    this.groupPlacesByLocation();
   }
 
   ngAfterViewInit(): void {
@@ -83,6 +92,13 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.removePoiMarkers();
   }
 
+  /**
+   * Group places by location using the service
+   */
+  private groupPlacesByLocation(): void {
+    this.locationGroups = this.placesService.groupPlacesByLocation(this.allPlaces, this.markerAlphabet);
+  }
+
   initializeMap(): void {
     mapboxgl.accessToken = environment.mapboxToken;
     this.map = new mapboxgl.Map({
@@ -93,6 +109,8 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     
     this.map.on('load', () => {
+      // Ensure mapboxgl-map class is maintained (fix for marker drift issue #4048)
+      this.mapContainer.nativeElement.classList.add('mapboxgl-map');
       this.renderPoiMarkers();
     });
   }
@@ -100,40 +118,50 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   private renderPoiMarkers(): void {
     if (!this.map) return;
     this.removePoiMarkers();
-    if (!this.allPlaces || this.allPlaces.length === 0) return;
+    if (!this.locationGroups || this.locationGroups.length === 0) return;
     
     let bounds: mapboxgl.LngLatBounds | null = null;
     
-    this.allPlaces.forEach((place, idx) => {
-      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
-        const el = document.createElement('div');
-        el.className = 'custom-marker poi-marker';
-        el.innerHTML = this.markerAlphabet[idx % this.markerAlphabet.length];
-        
-        // Add click event listener to marker
-        el.addEventListener('click', (event) => {
-          event.stopPropagation();
-          this.togglePlaceExpansion(place);
-        });
-        
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat(place.poiCoordinates)
-          .addTo(this.map);
-        
-        this.poiMarkers.push(marker);
-        
-        if (!bounds) {
-          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
-        } else {
-          bounds.extend(place.poiCoordinates);
-        }
+    this.locationGroups.forEach((group) => {
+      const el = document.createElement('div');
+      el.className = 'custom-marker poi-marker';
+      el.innerHTML = group.alphabet;
+      
+      // Add badge if multiple places at this location
+      if (group.places.length > 1) {
+        const badge = document.createElement('div');
+        badge.className = 'marker-badge';
+        badge.textContent = group.places.length.toString();
+        el.appendChild(badge);
+      }
+      
+      // Add click event listener to marker
+      el.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.onMarkerClick(group);
+      });
+      
+      const marker = new mapboxgl.Marker(el, { 
+        offset: [-16, -16]  // Center the marker properly
+      })
+        .setLngLat(group.coordinates)
+        .addTo(this.map);
+      
+      this.poiMarkers.push(marker);
+      
+      if (!bounds) {
+        bounds = new mapboxgl.LngLatBounds(group.coordinates, group.coordinates);
+      } else {
+        bounds.extend(group.coordinates);
       }
     });
     
     if (bounds && this.poiMarkers.length > 0) {
       this.map.fitBounds(bounds, { padding: 100, maxZoom: 15 });
     }
-    this.highlightSelectedMarker();
+    
+    // Apply initial highlighting
+    this.updateMarkerHighlighting();
   }
 
   private removePoiMarkers(): void {
@@ -141,18 +169,36 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.poiMarkers = [];
   }
 
-  private highlightSelectedMarker(): void {
-    this.poiMarkers.forEach((marker, idx) => {
+  /**
+   * Update marker highlighting without recreating markers
+   */
+  private updateMarkerHighlighting(): void {
+    this.poiMarkers.forEach((marker, index) => {
       const el = marker.getElement();
       if (!el) return;
       
-      const place = this.allPlaces[idx];
-      if (this.selectedPlaceId && place && place.id === this.selectedPlaceId) {
+      const group = this.locationGroups[index];
+      if (this.highlightedMarkerAlphabet === group.alphabet) {
         el.classList.add('selected-marker');
       } else {
         el.classList.remove('selected-marker');
       }
     });
+  }
+
+  /**
+   * Handle marker click - toggle expansion of all places in the group
+   */
+  private onMarkerClick(group: LocationGroup): void {
+    group.isExpanded = !group.isExpanded;
+    
+    if (group.isExpanded) {
+      // Expand all places in this group
+      group.places.forEach(place => this.expandedPlaceIds.add(place.id!));
+    } else {
+      // Collapse all places in this group
+      group.places.forEach(place => this.expandedPlaceIds.delete(place.id!));
+    }
   }
 
   private zoomToPlace(place: Place): void {
@@ -168,17 +214,15 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private resetMapView(): void {
-    if (!this.map || this.allPlaces.length === 0) return;
+    if (!this.map || this.locationGroups.length === 0) return;
     
     let bounds: mapboxgl.LngLatBounds | null = null;
     
-    this.allPlaces.forEach((place) => {
-      if (place.poiCoordinates && Array.isArray(place.poiCoordinates) && place.poiCoordinates.length === 2) {
-        if (!bounds) {
-          bounds = new mapboxgl.LngLatBounds(place.poiCoordinates, place.poiCoordinates);
-        } else {
-          bounds.extend(place.poiCoordinates);
-        }
+    this.locationGroups.forEach((group) => {
+      if (!bounds) {
+        bounds = new mapboxgl.LngLatBounds(group.coordinates, group.coordinates);
+      } else {
+        bounds.extend(group.coordinates);
       }
     });
     
@@ -188,26 +232,37 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getPlaceAlphabet(place: Place): string {
-    const index = this.allPlaces.indexOf(place);
-    return this.markerAlphabet[index % this.markerAlphabet.length];
+    const group = this.locationGroups.find(g => g.places.includes(place));
+    return group ? group.alphabet : 'A';
   }
 
   togglePlaceExpansion(place: Place): void {
-    if (this.selectedPlaceId === place.id) {
-      // Collapse current place
-      this.selectedPlaceId = null;
-      this.highlightSelectedMarker();
+    const wasExpanded = this.expandedPlaceIds.has(place.id!);
+    
+    if (wasExpanded) {
+      // Collapse this place only
+      this.expandedPlaceIds.delete(place.id!);
+      this.highlightedMarkerAlphabet = null;
       this.resetMapView();
     } else {
-      // Expand new place (and collapse any previously expanded)
-      this.selectedPlaceId = place.id;
-      this.highlightSelectedMarker();
-      this.zoomToPlace(place);
+      // Close all other places and expand this one
+      this.expandedPlaceIds.clear();
+      this.expandedPlaceIds.add(place.id!);
+      
+      // Highlight the marker for this place
+      const group = this.locationGroups.find(g => g.places.includes(place));
+      if (group) {
+        this.highlightedMarkerAlphabet = group.alphabet;
+        this.zoomToPlace(place);
+      }
     }
+    
+    // Update marker highlighting without recreating markers
+    this.updateMarkerHighlighting();
   }
 
   isPlaceExpanded(place: Place): boolean {
-    return this.selectedPlaceId === place.id;
+    return this.expandedPlaceIds.has(place.id!);
   }
 
   getVisualizationData(place: Place, type: string): { 

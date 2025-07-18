@@ -50,6 +50,14 @@ export interface Place {
   };
 }
 
+export interface LocationGroup {
+  coordinates: [number, number];
+  places: Place[];
+  alphabet: string;
+  isExpanded?: boolean;    // For summary component
+  isHighlighted?: boolean; // For journey-planner component
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -172,5 +180,66 @@ export class PlacesService {
 
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+
+  /**
+   * Calculate distance between two coordinates using Haversine formula
+   * @param coords1 - First coordinate pair [lng, lat]
+   * @param coords2 - Second coordinate pair [lng, lat]
+   * @returns Distance in meters
+   */
+  calculateDistance(coords1: [number, number], coords2: [number, number]): number {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = coords1[1] * Math.PI / 180; // φ, λ in radians
+    const φ2 = coords2[1] * Math.PI / 180;
+    const Δφ = (coords2[1] - coords1[1]) * Math.PI / 180;
+    const Δλ = (coords2[0] - coords1[0]) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  }
+
+  /**
+   * Group places by location (within 10 meters of each other)
+   * @param places - Array of places to group
+   * @param markerAlphabet - String of alphabet characters for markers
+   * @returns Array of location groups
+   */
+  groupPlacesByLocation(places: Place[], markerAlphabet: string): LocationGroup[] {
+    const locationGroups: LocationGroup[] = [];
+    let alphabetIndex = 0;
+
+    places.forEach(place => {
+      if (!place.poiCoordinates) return;
+
+      // Find if this place should be grouped with an existing group
+      let addedToGroup = false;
+      for (const group of locationGroups) {
+        const distance = this.calculateDistance(place.poiCoordinates, group.coordinates);
+        if (distance <= 10) { // Within 10 meters
+          group.places.push(place);
+          addedToGroup = true;
+          break;
+        }
+      }
+
+      if (!addedToGroup) {
+        // Create new group
+        locationGroups.push({
+          coordinates: place.poiCoordinates,
+          places: [place],
+          alphabet: markerAlphabet[alphabetIndex % markerAlphabet.length],
+          isExpanded: false,
+          isHighlighted: false
+        });
+        alphabetIndex++;
+      }
+    });
+
+    return locationGroups;
   }
 } 

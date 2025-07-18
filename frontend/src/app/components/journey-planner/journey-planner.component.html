@@ -32,6 +32,7 @@
                 <div class="place" 
                     *ngFor="let place of places; let i = index"
                     [class.selected]="place === selectedPlace"
+                    [class.highlighted]="isPlaceHighlighted(place)"
                     (click)="selectPlace(place)">
                     <span class="place-info">
                       <span class="marker-alphabet">{{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i % 26]}}.</span>

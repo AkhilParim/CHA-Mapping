@@ -246,6 +246,12 @@
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
         }
+        
+        &.highlighted {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
 
         span {
             display: flex;
@@ -347,6 +353,24 @@
             font-size: 14px;
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            
+            .marker-badge {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background-color: #dc2626;
+                color: white;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: 600;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
         }
         .to-marker {
             background-color: #228be6;
