@@ -22,7 +22,8 @@
           <div class="date-header">{{date}}</div>
           <div class="date-places">
             <div *ngFor="let place of placesByDate.get(date); let i = index" class="place-item" 
-                 [class.expanded]="isPlaceExpanded(place)">
+                 [class.expanded]="isPlaceExpanded(place)"
+                 [class.highlighted]="isPlaceHighlighted(place)">
               
               <!-- Collapsed View - Single Line -->
               <div class="place-summary" (click)="togglePlaceExpansion(place)">

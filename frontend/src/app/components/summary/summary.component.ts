@@ -55,6 +55,7 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   locationGroups: LocationGroup[] = [];
   private expandedPlaceIds: Set<string> = new Set();
   private highlightedMarkerAlphabet: string | null = null;
+  private highlightedPlaceIds: Set<string> = new Set(); // Track highlighted cards from marker clicks
   
   constructor(
     public dialogRef: MatDialogRef<SummaryComponent>,
@@ -187,18 +188,24 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Handle marker click - toggle expansion of all places in the group
+   * Handle marker click - only highlight related cards, don't expand them
    */
   private onMarkerClick(group: LocationGroup): void {
-    group.isExpanded = !group.isExpanded;
+    // Clear previous highlights
+    this.highlightedPlaceIds.clear();
     
-    if (group.isExpanded) {
-      // Expand all places in this group
-      group.places.forEach(place => this.expandedPlaceIds.add(place.id!));
+    // Toggle highlighting for this group
+    if (this.highlightedMarkerAlphabet === group.alphabet) {
+      // If this marker was already highlighted, unhighlight it
+      this.highlightedMarkerAlphabet = null;
     } else {
-      // Collapse all places in this group
-      group.places.forEach(place => this.expandedPlaceIds.delete(place.id!));
+      // Highlight this marker and its related cards
+      this.highlightedMarkerAlphabet = group.alphabet;
+      group.places.forEach(place => this.highlightedPlaceIds.add(place.id!));
     }
+    
+    // Update marker highlighting
+    this.updateMarkerHighlighting();
   }
 
   private zoomToPlace(place: Place): void {
@@ -240,29 +247,26 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
     const wasExpanded = this.expandedPlaceIds.has(place.id!);
     
     if (wasExpanded) {
-      // Collapse this place only
+      // Collapse this place
       this.expandedPlaceIds.delete(place.id!);
-      this.highlightedMarkerAlphabet = null;
-      this.resetMapView();
     } else {
-      // Close all other places and expand this one
+      // Close all other places and expand this one (accordion behavior)
       this.expandedPlaceIds.clear();
       this.expandedPlaceIds.add(place.id!);
-      
-      // Highlight the marker for this place
-      const group = this.locationGroups.find(g => g.places.includes(place));
-      if (group) {
-        this.highlightedMarkerAlphabet = group.alphabet;
-        this.zoomToPlace(place);
-      }
     }
     
-    // Update marker highlighting without recreating markers
+    // Clear any marker highlighting when cards are clicked
+    this.highlightedMarkerAlphabet = null;
+    this.highlightedPlaceIds.clear();
     this.updateMarkerHighlighting();
   }
 
   isPlaceExpanded(place: Place): boolean {
     return this.expandedPlaceIds.has(place.id!);
+  }
+
+  isPlaceHighlighted(place: Place): boolean {
+    return this.highlightedPlaceIds.has(place.id!);
   }
 
   getVisualizationData(place: Place, type: string): { 

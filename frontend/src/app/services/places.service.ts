@@ -220,7 +220,7 @@ export class PlacesService {
       let addedToGroup = false;
       for (const group of locationGroups) {
         const distance = this.calculateDistance(place.poiCoordinates, group.coordinates);
-        if (distance <= 10) { // Within 10 meters
+        if (distance <= 100) { // Within 100 meters
           group.places.push(place);
           addedToGroup = true;
           break;
