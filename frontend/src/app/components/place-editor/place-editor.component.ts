@@ -119,6 +119,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   showCrosshair = false;
   crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
+  isDraggingEmotion = false;
   private resizeHandler?: () => void;
   private configSubscription?: Subscription;
 
@@ -263,6 +264,11 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     
     // Update emotion display after view initialization
     setTimeout(() => {
+      // Default to center if not set
+      if (!this.selectedEmotion) {
+        this.selectedEmotion = { x: 0, y: 0, text: this.getEmotionText(0.5, 0.5) };
+        this.placeForm.patchValue({ emotion: this.selectedEmotion });
+      }
       this.updateEmotionDisplay();
     }, 100);
   }
@@ -500,40 +506,52 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       };
+      if (this.isDraggingEmotion) {
+        this.setEmotionFromPixel(this.crosshairPosition.x, this.crosshairPosition.y, rect);
+      }
     });
 
     grid.addEventListener('mouseleave', () => {
       this.showCrosshair = false;
+      this.isDraggingEmotion = false;
     });
 
     grid.addEventListener('click', (e: MouseEvent) => {
       const rect = grid.getBoundingClientRect();
-      const pixelPoint = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
-      
-      // Convert to normalized coordinates
-      const normalized = this.pixelToNormalized(pixelPoint.x, pixelPoint.y, rect);
-      
-      // Calculate emotion based on position (using percentages for emoji calculation)
-      const xPercent = pixelPoint.x / rect.width;
-      const yPercent = pixelPoint.y / rect.height;
-      
-      this.selectedEmotion = {
-        x: normalized.x, // Store normalized coordinates
-        y: normalized.y, // Store normalized coordinates
-        text: this.getEmotionText(xPercent, yPercent)
-      };
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      this.setEmotionFromPixel(x, y, rect);
+    });
 
-      this.placeForm.patchValue({
-        emotion: this.selectedEmotion
-      });
+    grid.addEventListener('mousedown', (e: MouseEvent) => {
+      const rect = grid.getBoundingClientRect();
+      this.isDraggingEmotion = true;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      this.setEmotionFromPixel(x, y, rect);
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isDraggingEmotion = false;
     });
 
     // Add resize listener to update emotion display when grid size changes
     this.resizeHandler = this.updateEmotionDisplay.bind(this);
     window.addEventListener('resize', this.resizeHandler);
+  }
+
+  private setEmotionFromPixel(pixelX: number, pixelY: number, gridRect: DOMRect): void {
+    const x = Math.max(0, Math.min(gridRect.width, pixelX));
+    const y = Math.max(0, Math.min(gridRect.height, pixelY));
+    const normalized = this.pixelToNormalized(x, y, gridRect);
+    const xPercent = x / gridRect.width;
+    const yPercent = y / gridRect.height;
+    this.selectedEmotion = {
+      x: normalized.x,
+      y: normalized.y,
+      text: this.getEmotionText(xPercent, yPercent)
+    };
+    this.placeForm.patchValue({ emotion: this.selectedEmotion });
   }
 
 
@@ -1086,33 +1104,35 @@ emotions) was not good for 14 or more days during the past 30 days.`
   }
 
   private getEmotionText(x: number, y: number): string {
-    // x: 0 = dissatisfied, 1 = satisfied
-    // y: 0 = calm, 1 = stressed
-    
-    // Determine satisfaction level
-    let satisfactionLevel = '';
-    if (x < 0.33) {
-      satisfactionLevel = 'Very dissatisfied';
-    } else if (x < 0.66) {
-      satisfactionLevel = 'Somewhat dissatisfied';
-    } else if (x < 0.85) {
-      satisfactionLevel = 'Somewhat satisfied';
-    } else {
-      satisfactionLevel = 'Very satisfied';
+    // Use configured axis labels with sensible fallbacks
+    const leftLabel = (this.emotionLabelLeft || 'Dissatisfied').trim();
+    const rightLabel = (this.emotionLabelRight || 'Satisfied').trim();
+    const topLabel = (this.emotionLabelTop || 'Calm').trim();
+    const bottomLabel = (this.emotionLabelBottom || 'Stressed').trim();
+
+    const describeAxis = (p: number, minLabel: string, maxLabel: string): { text: string; neutral: boolean } => {
+      // Neutral band around center
+      const neutralBand = 0.1; // 10% from center counted as Neutral
+      const dist = Math.abs(p - 0.5);
+      if (dist <= neutralBand) return { text: 'Neutral', neutral: true };
+
+      // Normalize remaining range to 0..1 then map to 20..100 in pentiles
+      const normalized = Math.min(1, Math.max(0, (dist - neutralBand) / (0.5 - neutralBand)));
+      const bucket = Math.max(1, Math.min(5, Math.ceil(normalized * 5)));
+      const pct = bucket * 20; // 20,40,60,80,100
+
+      return { text: p < 0.5 ? `${pct}% ${minLabel}` : `${pct}% ${maxLabel}`, neutral: false };
+    };
+
+    const xRes = describeAxis(x, leftLabel, rightLabel);
+    const yRes = describeAxis(y, topLabel, bottomLabel);
+
+    if (xRes.neutral && yRes.neutral) {
+      return 'Neutral';
     }
-    
-    // Determine stress level
-    let stressLevel = '';
-    if (y < 0.33) {
-      stressLevel = 'very calm';
-    } else if (y < 0.66) {
-      stressLevel = 'somewhat calm';
-    } else if (y < 0.85) {
-      stressLevel = 'somewhat stressed';
-    } else {
-      stressLevel = 'very stressed';
-    }
-    
-    return `${satisfactionLevel} and ${stressLevel}`;
+
+    const xText = xRes.neutral ? `Neutral (${leftLabel}–${rightLabel})` : xRes.text;
+    const yText = yRes.neutral ? `Neutral (${topLabel}–${bottomLabel})` : yRes.text;
+    return `${xText} and ${yText}`;
   }
 }

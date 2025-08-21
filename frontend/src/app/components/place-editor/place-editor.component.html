@@ -284,14 +284,13 @@
                     <div class="emotion-label left">{{ emotionLabelLeft || 'Dissatisfied' }}</div>
                     <div class="emotion-label right">{{ emotionLabelRight || 'Satisfied' }}</div>
                     <div class="emotion-label bottom">{{ emotionLabelBottom || 'Stressed' }}</div>
-                    <div class="grid-container" #emotionGrid>
-                        <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairPosition.x" [style.top.px]="crosshairPosition.y">
-                            <div class="horizontal"></div>
-                            <div class="vertical"></div>
-                        </div>
+                    <div class="grid-container" #emotionGrid [class.grabbing]="isDraggingEmotion">
                         <div class="emotion-indicator" *ngIf="selectedEmotion && getEmotionDisplayCoordinates()" 
                              [style.left.px]="getEmotionDisplayCoordinates()!.x" 
                              [style.top.px]="getEmotionDisplayCoordinates()!.y">
+                            <div class="emotion-annotation" *ngIf="selectedEmotion?.text as desc">
+                                {{ desc }}
+                            </div>
                             <div class="emotion-dot"></div>
                         </div>
                     </div>
