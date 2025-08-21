@@ -1,0 +1,60 @@
+<div class="config-container">
+  <h1>Configuration</h1>
+
+  <div *ngIf="configurationService.configError" class="config-error-banner">
+    There is an issue with loading the configurations. You can still try to save new values below.
+  </div>
+
+  <form [formGroup]="configForm" (ngSubmit)="onSubmit()" class="config-form">
+    <div class="fieldset">
+      <div class="fieldset-title">Lists</div>
+      <div class="form-group">
+        <label for="activityCsv">Activity Types</label>
+        <small class="hint">Enter a comma-separated list (e.g., Home, Healthcare, Grocery)</small>
+        <input id="activityCsv" type="text" formControlName="activityCsv" placeholder="Home, Healthcare, Grocery" />
+        <div class="error" *ngIf="configForm.get('activityCsv')?.invalid && configForm.get('activityCsv')?.touched">
+          Please enter at least one value.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="transportCsv">Transport Types</label>
+        <small class="hint">Enter a comma-separated list (e.g., Walk, Bicycle, Bus)</small>
+        <input id="transportCsv" type="text" formControlName="transportCsv" placeholder="Walk, Bicycle, Bus" />
+        <div class="error" *ngIf="configForm.get('transportCsv')?.invalid && configForm.get('transportCsv')?.touched">
+          Please enter at least one value.
+        </div>
+      </div>
+    </div>
+
+    <div class="fieldset">
+      <div class="fieldset-title">Emotion Grid Labels</div>
+      <div class="grid-labels">
+        <div class="form-group">
+          <label for="labelTop">Top Label</label>
+          <input id="labelTop" type="text" formControlName="labelTop" placeholder="Calm" />
+        </div>
+        <div class="form-group">
+          <label for="labelRight">Right Label</label>
+          <input id="labelRight" type="text" formControlName="labelRight" placeholder="Satisfied" />
+        </div>
+        <div class="form-group">
+          <label for="labelBottom">Bottom Label</label>
+          <input id="labelBottom" type="text" formControlName="labelBottom" placeholder="Stressed" />
+        </div>
+        <div class="form-group">
+          <label for="labelLeft">Left Label</label>
+          <input id="labelLeft" type="text" formControlName="labelLeft" placeholder="Dissatisfied" />
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="secondary" (click)="onCancel()" [disabled]="uiState !== 'idle'">{{ uiState === 'refreshing' ? 'Refreshing...' : 'Cancel' }}</button>
+      <button type="submit" [disabled]="uiState !== 'idle' || configForm.invalid">{{ uiState === 'saving' ? 'Saving...' : 'Save' }}</button>
+    </div>
+
+    <div class="status success" *ngIf="saveSuccess">Configuration saved successfully.</div>
+    <div class="status error" *ngIf="saveError">{{ saveError }}</div>
+  </form>
+</div> 

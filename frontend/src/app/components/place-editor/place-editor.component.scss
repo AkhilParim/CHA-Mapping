@@ -744,6 +744,17 @@ form {
         display: flex;
         flex-direction: column;
 
+        .config-error-banner {
+            color: #dc2626;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            background-color: #fef2f2;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #fca5a5;
+        }
+
         .emotion-section {
             flex: 1;
             margin-bottom: 24px;

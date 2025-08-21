@@ -275,12 +275,15 @@
             </div>
         </div>
         <div class="right-container">
+            <div *ngIf="configurationService.configError" class="config-error-banner">
+                There is an issue with loading the configurations. Please try again later. If the problem persists, please contact support.
+              </div>
             <div class="emotion-section">
                 <div class="emotion-grid">
-                    <div class="emotion-label top">Calm</div>
-                    <div class="emotion-label left">Dissatisfied</div>
-                    <div class="emotion-label right">Satisfied</div>
-                    <div class="emotion-label bottom">Stressed</div>
+                    <div class="emotion-label top">{{ emotionLabelTop || 'Calm' }}</div>
+                    <div class="emotion-label left">{{ emotionLabelLeft || 'Dissatisfied' }}</div>
+                    <div class="emotion-label right">{{ emotionLabelRight || 'Satisfied' }}</div>
+                    <div class="emotion-label bottom">{{ emotionLabelBottom || 'Stressed' }}</div>
                     <div class="grid-container" #emotionGrid>
                         <div class="crosshair" *ngIf="showCrosshair" [style.left.px]="crosshairPosition.x" [style.top.px]="crosshairPosition.y">
                             <div class="horizontal"></div>

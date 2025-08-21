@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Subscription } from 'rxjs';
 import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 import { GeoInfoModalComponent } from '../geo-info-modal/geo-info-modal.component';
 import { MapSelectorDialogComponent, MapSelectorData, MapSelectorResult } from '../map-selector-dialog/map-selector-dialog.component';
@@ -11,6 +12,7 @@ import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { PlacesService } from '../../services/places.service';
 import { GeojsonService } from '../../services/geojson.service';
+import { ConfigurationService } from '../../services/configuration.service';
 import { HttpClientModule } from '@angular/common/http';
 import { Collection } from '../../services/geojson.service';
 
@@ -69,7 +71,7 @@ interface PlaceFormData {
   selector: 'app-place-editor',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule],
-  providers: [GeojsonService],
+  providers: [GeojsonService, ConfigurationService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './place-editor.component.html',
   styleUrl: './place-editor.component.scss'
@@ -105,28 +107,20 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     MHLTH_CrudePrev: { barNumber: null as number | null, leftLabel: '', rightLabel: '', hasData: false }
   };
 
-  activityTypes = [
-    'Home',
-    'Healthcare',
-    'Pharmacy',
-    'Grocery',
-    'Wellness'
-  ];
-
-  transportTypes = [
-    'Walk',
-    'Bicycle',
-    'Drove Myself',
-    'Driven by Someone Else',
-    'Bus',
-    'Train'
-  ];
+  activityTypes: string[] = [];
+  transportTypes: string[] = [];
+  // Emotion labels from configuration
+  emotionLabelTop: string = '';
+  emotionLabelRight: string = '';
+  emotionLabelBottom: string = '';
+  emotionLabelLeft: string = '';
 
   // Emotion grid properties
   showCrosshair = false;
   crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
   private resizeHandler?: () => void;
+  private configSubscription?: Subscription;
 
   constructor(
     private fb: FormBuilder,
@@ -134,7 +128,8 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     public router: Router,
     private placesService: PlacesService,
     private dialog: MatDialog,
-    public geojsonService: GeojsonService
+    public geojsonService: GeojsonService,
+    public configurationService: ConfigurationService
   ) {
     this.initializeForm();
   }
@@ -239,6 +234,27 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     mapboxgl.accessToken = environment.mapboxToken;
     this.loadSearchScripts();
+    
+    // Subscribe to configuration changes
+    this.configSubscription = this.configurationService.configuration$.subscribe(config => {
+      if (config) {
+        this.activityTypes = config.configuration.activityTypes;
+        this.transportTypes = config.configuration.transportTypes;
+
+        const el = config.configuration.emotionLabels;
+        this.emotionLabelTop = el?.top?.trim?.() || '';
+        this.emotionLabelRight = el?.right?.trim?.() || '';
+        this.emotionLabelBottom = el?.bottom?.trim?.() || '';
+        this.emotionLabelLeft = el?.left?.trim?.() || '';
+      } else {
+        this.activityTypes = [];
+        this.transportTypes = [];
+        this.emotionLabelTop = '';
+        this.emotionLabelRight = '';
+        this.emotionLabelBottom = '';
+        this.emotionLabelLeft = '';
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -260,6 +276,11 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     // Remove resize event listener
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
+    }
+    
+    // Unsubscribe from configuration changes
+    if (this.configSubscription) {
+      this.configSubscription.unsubscribe();
     }
   }
 
