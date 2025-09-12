@@ -1,0 +1,58 @@
+.export-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.header {
+  .subtitle {
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+  }
+}
+
+.options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.option {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.hint {
+  margin: 6px 0 12px 0;
+  color: var(--text-muted);
+}
+
+.status {
+  margin-left: 12px;
+  color: var(--success-600);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.exit-btn[disabled] {
+  background: var(--disabled-bg) !important;
+  color: var(--text-disabled) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.exit-btn:not([disabled]) {
+  background: var(--primary-600) !important;
+  color: var(--on-primary) !important;
+}
+
+.exit-btn:not([disabled]):hover {
+  filter: brightness(0.95);
+}
+
+

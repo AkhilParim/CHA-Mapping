@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, tap, take, map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface AppConfiguration {
   _id?: string;
@@ -23,7 +24,7 @@ export interface AppConfiguration {
   providedIn: 'root'
 })
 export class ConfigurationService {
-  private readonly API_BASE_URL = 'http://localhost:3050';
+  private readonly API_BASE_URL = environment.apiUrl;
 
   private configurationSubject = new BehaviorSubject<AppConfiguration | null>(null);
   public configuration$ = this.configurationSubject.asObservable();

@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "gen:pgp": "node ./scripts/gen-pgp.mjs"
   },
   "private": true,
   "dependencies": {
@@ -23,7 +24,9 @@
     "@angular/router": "^18.2.0",
     "@mapbox/search-js-web": "^1.0.0",
     "@turf/turf": "^7.2.0",
+    "@zip.js/zip.js": "^2.7.72",
     "mapbox-gl": "^3.11.0",
+    "openpgp": "^6.2.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"

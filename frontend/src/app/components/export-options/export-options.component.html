@@ -1,0 +1,28 @@
+<div class="export-container">
+  <div class="header">
+    <h2>Export Options</h2>
+    <p class="subtitle">Choose how you want to share your results</p>
+  </div>
+
+  <div class="options">
+    <div class="option">
+      <h3>Copy Results</h3>
+      <p class="hint">Creates a compact string of your results for easy copy and paste.</p>
+      <button mat-flat-button color="primary" (click)="onCopyOutput()">Copy Output</button>
+      <span class="status" *ngIf="copied">Copied!</span>
+    </div>
+
+    <div class="option">
+      <h3>Download File</h3>
+      <p class="hint">Download your results as a file to share.</p>
+      <button mat-stroked-button color="primary" (click)="onDownloadOutput()">Download Output</button>
+      <span class="status" *ngIf="downloaded">Downloaded</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="exit-btn" mat-flat-button color="primary" (click)="onExit()" [disabled]="!hasActed">Done</button>
+  </div>
+</div>
+
+

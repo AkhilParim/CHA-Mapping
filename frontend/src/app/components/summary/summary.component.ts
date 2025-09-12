@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject, ViewChild, ElementRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { Place, PlacesService, LocationGroup } from '../../services/places.service';
@@ -60,7 +60,8 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     public dialogRef: MatDialogRef<SummaryComponent>,
     @Inject(MAT_DIALOG_DATA) public data: SummaryData,
-    private placesService: PlacesService
+    private placesService: PlacesService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -296,8 +297,23 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSubmit(): void {
-    this.downloadAsCSV();
-    this.dialogRef.close(true);
+    // Open export options dialog. Proceed only after user performs an action and exits.
+    import('../export-options/export-options.component').then(m => {
+      const ref = this.dialog.open(m.ExportOptionsComponent, {
+        width: '520px',
+        maxWidth: '95vw',
+        data: {
+          journeyDates: this.journeyDates,
+          placesByDate: this.placesByDate
+        }
+      });
+      ref.afterClosed().subscribe(success => {
+        if (success) {
+          // Continue with the original submit flow: close and return true
+          this.dialogRef.close(true);
+        }
+      });
+    });
   }
 
   // Format time for display
@@ -315,111 +331,5 @@ export class SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
       return time;
     }
   }
-
-  public downloadAsCSV(): void {
-    // Define the CSV headers with more detailed information
-    const headers = [
-      'Date', 
-      'Activity Number', 
-      'Activity Type', 
-      'Place Name', 
-      'From Address',
-      'From Address Coordinates',
-      'Leave Time',
-      'POI Address',
-      'POI Coordinates',
-      'POI GeoID',
-      'Duration at POI (minutes)',
-      'To Address',
-      'To Address Coordinates',
-      'Arrive Time',
-      'Transportation', 
-      'Feeling',
-      'Emotion Grid Coordinates', 
-      'Comments',
-      'NDI (Neighborhood Deprivation Index)',
-      'TES (Tree Equity Score)',
-      'MHLTH (Mental Health Crude Prevalence)'
-    ];
-    
-    // Create CSV content starting with headers
-    let csvContent = headers.join(',') + '\n';
-    
-    // Add data rows
-    this.journeyDates.forEach(date => {
-      const places = this.placesByDate.get(date) || [];
-      places.forEach((place, index) => {
-        // Format coordinates as "lat,lng" strings
-        const fromCoords = place.fromCoordinates ? 
-          `"${place.fromCoordinates[1]},${place.fromCoordinates[0]}"` : '';
-        const poiCoords = place.poiCoordinates ? 
-          `"${place.poiCoordinates[1]},${place.poiCoordinates[0]}"` : '';
-        const toCoords = place.toCoordinates ? 
-          `"${place.toCoordinates[1]},${place.toCoordinates[0]}"` : '';
-        
-        // Format emotion text and coordinates
-        const emotionText = place.emotion ? (place.emotion.text) : '';
-        const emotionCoords = place.emotion ? 
-          `"(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})"` : '';
-        
-        // Format geo values
-        const ndiValue = place.geoValues?.NDI ? place.geoValues.NDI.toString() : '';
-        const tesValue = place.geoValues?.tes ? place.geoValues.tes.toString() : '';
-        const mhlthValue = place.geoValues?.MHLTH_CrudePrev ? place.geoValues.MHLTH_CrudePrev.toString() : '';
-
-        const rowData = [
-          date,
-          (index + 1).toString(),
-          this.escapeCSVField(place.activityType),
-          this.escapeCSVField(place.placeLabel || ''),
-          this.escapeCSVField(place.fromAddress),
-          fromCoords,
-          this.escapeCSVField(place.leaveTime || ''),
-          this.escapeCSVField(place.poiAddress),
-          poiCoords,
-          this.escapeCSVField(place.geoId || ''),
-          place.timeSpentAtPoi ? place.timeSpentAtPoi.toString() : '',
-          this.escapeCSVField(place.toAddress),
-          toCoords,
-          this.escapeCSVField(place.arriveTime || ''),
-          this.escapeCSVField(place.transportType),
-          this.escapeCSVField(emotionText),
-          emotionCoords,
-          this.escapeCSVField(place.comments || ''),
-          ndiValue,
-          tesValue,
-          mhlthValue
-        ];
-        csvContent += rowData.join(',') + '\n';
-      });
-    });
-    
-    // Create a Blob with the CSV content
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    // Generate a unique timestamp for the filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `CHA_Mapping_${timestamp}.csv`;
-    
-    // Create a download link and trigger the download
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
   
-  private escapeCSVField(field: string): string {
-    // If the field contains commas, quotes, or newlines, wrap it in quotes
-    // and escape any existing quotes
-    if (field && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
-      return '"' + field.replace(/"/g, '""') + '"';
-    }
-    return field;
-  }
 } 
