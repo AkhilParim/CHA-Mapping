@@ -1,0 +1,56 @@
+:root {
+    /* Typography */
+    --font-family-sans: 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    /* Text */
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-disabled: #9ca3af;
+    --text-secondary: #495057;
+
+    /* Surfaces & borders */
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --border: #e2e8f0;
+    --border-subtle: #dee2e6;
+    --border-muted: #e9ecef;
+
+    /* Brand & semantic */
+    --primary-500: #4c6ef5;
+    --primary-600: #4f46e5;
+    --primary-700: #4338ca;
+    --on-primary: #ffffff;
+
+    --success-600: #16a34a;
+    --warning-500: #f59e0b;
+    --danger-600: #dc2626;
+    --danger-400: #ef4444;
+    --danger-300: #ff4444;
+    --danger-50: #fff3f3;
+    --info-400: #1c7ed6;
+    --danger-500: #f03e3e;
+    --info-500: #228be6;
+    --success-500: #40c057;
+    --primary-50: #edf2ff;
+    --warning-50: #fefce8;
+    --warning-100: #fef3c7;
+    --danger-50: #fff1f2;
+    --neutral-300: #cbd5e1;
+
+    /* State */
+    --disabled-bg: #e5e7eb;
+    --muted-bg: #f8f9fa;
+    --muted-bg-2: #f1f3f5;
+    --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+
+    /* Shape & elevation */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+

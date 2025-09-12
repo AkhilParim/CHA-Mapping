@@ -33,27 +33,27 @@ label {
 }
 
 .hint {
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
 input[type="text"] {
   padding: 10px 12px;
   border-radius: 6px;
-  border: 1px solid #1f2937;
-  background: #0b0f14;
-  color: #f3f4f6;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--danger-400);
   font-size: 12px;
   margin-top: 4px;
 }
 
 .fieldset {
-  border: 1px solid #1f2937;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 12px;
 }
 
@@ -74,8 +74,8 @@ input[type="text"] {
 }
 
 button[type="submit"] {
-  background: #2563eb;
-  color: white;
+  background: var(--primary-600);
+  color: var(--on-primary);
   border: none;
   padding: 10px 14px;
   border-radius: 6px;
@@ -83,8 +83,8 @@ button[type="submit"] {
 }
 
 button.secondary {
-  background: #e4e4e4;
-  color: #000;
+  background: var(--surface-alt);
+  color: var(--text);
   border: 1px solid transparent;
   padding: 10px 14px;
   border-radius: 6px;
@@ -92,9 +92,9 @@ button.secondary {
 }
 
 .status.success {
-  color: #16a34a;
+  color: var(--success-600);
 }
 
 .status.error {
-  color: #ef4444;
+  color: var(--danger-400);
 } 

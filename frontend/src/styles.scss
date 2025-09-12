@@ -1,12 +1,20 @@
+/* stylelint-disable */
 /* You can add global styles to this file, and also import other style files */
 
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
+@import "./styles/_tokens.scss";
 
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-sans);
+    color: var(--text);
+    background-color: var(--bg);
 }
 
 p {
