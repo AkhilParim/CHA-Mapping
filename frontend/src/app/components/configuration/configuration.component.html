@@ -7,9 +7,9 @@
 
   <form [formGroup]="configForm" (ngSubmit)="onSubmit()" class="config-form">
     <div class="fieldset">
-      <div class="fieldset-title">Lists</div>
+      <div class="fieldset-title">Options</div>
       <div class="form-group">
-        <label for="activityCsv">Activity Types</label>
+        <label class="fieldset-subtitle" for="activityCsv">Activity Types</label>
         <small class="hint">Enter a comma-separated list (e.g., Home, Healthcare, Grocery)</small>
         <input id="activityCsv" type="text" formControlName="activityCsv" placeholder="Home, Healthcare, Grocery" />
         <div class="error" *ngIf="configForm.get('activityCsv')?.invalid && configForm.get('activityCsv')?.touched">
@@ -18,17 +18,14 @@
       </div>
 
       <div class="form-group">
-        <label for="transportCsv">Transport Types</label>
+        <label class="fieldset-subtitle" for="transportCsv">Transport Types</label>
         <small class="hint">Enter a comma-separated list (e.g., Walk, Bicycle, Bus)</small>
         <input id="transportCsv" type="text" formControlName="transportCsv" placeholder="Walk, Bicycle, Bus" />
         <div class="error" *ngIf="configForm.get('transportCsv')?.invalid && configForm.get('transportCsv')?.touched">
           Please enter at least one value.
         </div>
       </div>
-    </div>
-
-    <div class="fieldset">
-      <div class="fieldset-title">Emotion Grid Labels</div>
+      <div class="fieldset-subtitle">Emotion Grid Labels</div>
       <div class="grid-labels">
         <div class="form-group">
           <label for="labelTop">Top Label</label>
@@ -47,14 +44,44 @@
           <input id="labelLeft" type="text" formControlName="labelLeft" placeholder="Dissatisfied" />
         </div>
       </div>
-    </div>
+      <div class="actions-row">
+        <div class="actions">
+          <button type="button" class="secondary" (click)="onResetToDefault()" [disabled]="uiState !== 'idle'">Return to Default</button>
+          <button type="button" class="secondary" (click)="onCancel()" [disabled]="uiState !== 'idle'">{{ uiState === 'refreshing' ? 'Refreshing...' : 'Cancel' }}</button>
+          <button type="submit" [disabled]="uiState !== 'idle' || configForm.invalid">{{ uiState === 'saving' ? 'Saving...' : 'Save Options' }}</button>
+        </div>
 
-    <div class="actions">
-      <button type="button" class="secondary" (click)="onCancel()" [disabled]="uiState !== 'idle'">{{ uiState === 'refreshing' ? 'Refreshing...' : 'Cancel' }}</button>
-      <button type="submit" [disabled]="uiState !== 'idle' || configForm.invalid">{{ uiState === 'saving' ? 'Saving...' : 'Save' }}</button>
+        <div class="statuses">
+          <div class="status info" *ngIf="configForm.dirty && uiState === 'idle' && !saveSuccess && !saveError">Unsaved changes are present</div>
+          <div class="status success" *ngIf="saveSuccess">Configuration saved successfully.</div>
+          <div class="status error" *ngIf="saveError">{{ saveError }}</div>
+        </div>
+      </div>
     </div>
-
-    <div class="status success" *ngIf="saveSuccess">Configuration saved successfully.</div>
-    <div class="status error" *ngIf="saveError">{{ saveError }}</div>
   </form>
+
+  <!-- THEME BLOCK -->
+  <div class="fieldset">
+    <div class="fieldset-title">Theme</div>
+    <div class="hint">Allowed keys: --text, --text-muted, --text-disabled, --text-secondary, --primary-50, --primary-500, --primary-600, --primary-700, --on-primary</div>
+    <div class="theme-editor">
+      <label for="themeJson" class="sr-only">Theme JSON</label>
+      <textarea id="themeJson" [(ngModel)]="themeJsonText" (ngModelChange)="onThemeChange($event)" [ngModelOptions]="{standalone: true}" spellcheck="false"></textarea>
+    </div>
+
+    <div class="actions-row">
+      <div class="actions">
+        <button type="button" class="secondary" (click)="onThemeResetToDefault()" [disabled]="themeUiState !== 'idle'">Return to Default</button>
+        <button type="button" class="secondary" (click)="onCancel()" [disabled]="themeUiState !== 'idle'">{{ themeUiState === 'refreshing' ? 'Refreshing...' : 'Cancel' }}</button>
+        <button type="submit" (click)="onThemeSave()" [disabled]="themeUiState !== 'idle'">{{ themeUiState === 'saving' ? 'Saving...' : 'Save Theme' }}</button>
+      </div>
+
+      <div class="statuses">
+        <div class="status info" *ngIf="themeDirty && themeUiState === 'idle' && !themeSaveSuccess && !themeSaveError">Unsaved changes are present</div>
+        <div class="status success" *ngIf="themeSaveSuccess">Theme saved and applied.</div>
+        <div class="status error" *ngIf="themeSaveError">{{ themeSaveError }}</div>
+        <div class="status info" *ngIf="configurationService.configError">API error detected. You can still edit and try saving.</div>
+      </div>
+    </div>
+  </div>
 </div> 

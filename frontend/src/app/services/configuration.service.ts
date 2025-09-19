@@ -20,6 +20,23 @@ export interface AppConfiguration {
   };
 }
 
+export type ThemeTokens = {
+  '--text'?: string;
+  '--text-muted'?: string;
+  '--text-disabled'?: string;
+  '--text-secondary'?: string;
+  '--primary-50'?: string;
+  '--primary-500'?: string;
+  '--primary-600'?: string;
+  '--primary-700'?: string;
+  '--on-primary'?: string;
+};
+
+export interface ThemeConfigResponse {
+  theme: ThemeTokens;
+  lastUpdated: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,5 +96,14 @@ export class ConfigurationService {
         }
       })
     );
+  }
+
+  // --- Theme API ---
+  loadTheme(): Observable<ThemeConfigResponse> {
+    return this.http.get<ThemeConfigResponse>(`${this.API_BASE_URL}/theme`);
+  }
+
+  saveTheme(theme: ThemeTokens): Observable<any> {
+    return this.http.post(`${this.API_BASE_URL}/theme`, { theme });
   }
 } 

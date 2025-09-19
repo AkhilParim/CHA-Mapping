@@ -912,7 +912,12 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       };
     }
 
-    const barNumber = this.calculateBarPosition(value, tertile33, tertile67);
+    let barNumber = this.calculateBarPosition(value, tertile33, tertile67);
+
+    // For metrics where higher values indicate worse conditions, keep worse on the left
+    if (type === 'NDI' || type === 'MHLTH_CrudePrev') {
+      barNumber = 4 - barNumber;
+    }
 
     return { 
       barNumber, 

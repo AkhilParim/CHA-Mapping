@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ConfigurationService, AppConfiguration } from '../../services/configuration.service';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
+import { ConfigurationService, AppConfiguration, ThemeTokens, ThemeConfigResponse } from '../../services/configuration.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-configuration',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatDialogModule],
   templateUrl: './configuration.component.html',
   styleUrl: './configuration.component.scss'
 })
@@ -17,6 +17,12 @@ export class ConfigurationComponent implements OnInit {
   uiState: 'idle' | 'saving' | 'refreshing' = 'idle';
   saveSuccess = false;
   saveError: string | null = null;
+  themeUiState: 'idle' | 'saving' | 'refreshing' = 'idle';
+  themeSaveSuccess = false;
+  themeSaveError: string | null = null;
+  themeJsonText = '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+  themeBaselineText = '';
+  themeDirty = false;
 
   private currentConfig: AppConfiguration | null = null;
 
@@ -52,6 +58,19 @@ export class ConfigurationComponent implements OnInit {
           labelLeft: el.left || ''
         }, { emitEvent: false });
       }
+    });
+
+    // Load current theme from backend and initialize the editor
+    this.configurationService.loadTheme().subscribe({
+      next: (resp: ThemeConfigResponse) => {
+        const theme = resp?.theme || {};
+        if (theme && Object.keys(theme).length > 0) {
+          this.themeJsonText = JSON.stringify(theme, null, 2);
+        }
+        this.themeBaselineText = this.themeJsonText;
+        this.themeDirty = false;
+      },
+      error: () => {}
     });
   }
 
@@ -108,11 +127,110 @@ export class ConfigurationComponent implements OnInit {
         this.uiState = 'idle';
         this.saveSuccess = true;
         this.saveError = null;
+        this.configForm.markAsPristine();
+        this.configForm.markAsUntouched();
       },
       error: () => {
         this.uiState = 'idle';
         this.saveSuccess = false;
         this.saveError = 'Failed to save configuration. Please try again.';
+      }
+    });
+  }
+
+  // THEME HANDLERS
+  onThemeSave(): void {
+    this.themeSaveSuccess = false;
+    this.themeSaveError = null;
+    if (this.themeUiState !== 'idle') return;
+
+    let parsed: ThemeTokens;
+    try {
+      parsed = JSON.parse(this.themeJsonText);
+    } catch (e) {
+      this.themeSaveError = 'Invalid JSON. Please fix errors before saving.';
+      return;
+    }
+    // Simple key whitelist enforcement client-side
+    const allowedKeys = new Set([
+      '--text','--text-muted','--text-disabled','--text-secondary','--primary-50','--primary-500','--primary-600','--primary-700','--on-primary'
+    ]);
+    for (const key of Object.keys(parsed)) {
+      if (!allowedKeys.has(key)) {
+        this.themeSaveError = `Unknown token key: ${key}`;
+        return;
+      }
+    }
+
+    this.themeUiState = 'saving';
+    this.configurationService.saveTheme(parsed).subscribe({
+      next: () => {
+        this.themeUiState = 'idle';
+        this.themeSaveSuccess = true;
+        // Apply immediately
+        this.applyTheme(parsed);
+        // Update baseline & dirty state
+        this.themeBaselineText = this.themeJsonText;
+        this.themeDirty = false;
+      },
+      error: (err: any) => {
+        console.error('Theme save error:', err);
+        this.themeUiState = 'idle';
+        this.themeSaveSuccess = false;
+        this.themeSaveError = err?.error?.errors?.[0] || 'Failed to save theme. Please try again.';
+      }
+    });
+  }
+
+  onThemeResetToDefault(): void {
+    if (this.themeUiState !== 'idle') return;
+    this.themeJsonText = '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+    this.themeSaveSuccess = false;
+    this.themeSaveError = null;
+    this.themeDirty = this.themeJsonText !== this.themeBaselineText;
+  }
+
+  private applyTheme(tokens: ThemeTokens) {
+    if (!tokens) return;
+    const styleId = 'theme-overrides';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    const entries = Object.entries(tokens)
+      .filter(([_, v]) => typeof v === 'string' && v.trim().length > 0)
+      .map(([k, v]) => `${k}: ${v};`)
+      .join('\n  ');
+
+    styleEl.textContent = entries.length ? `:root {\n  ${entries}\n}` : '';
+  }
+
+  onThemeChange(nextValue: string): void {
+    this.themeDirty = nextValue !== this.themeBaselineText;
+  }
+
+  onThemeCancel(): void {
+    if (this.themeUiState !== 'idle') return;
+    this.themeSaveSuccess = false;
+    this.themeSaveError = null;
+    this.themeUiState = 'refreshing';
+    this.configurationService.loadTheme().subscribe({
+      next: (resp: ThemeConfigResponse) => {
+        const theme = resp?.theme || {};
+        const text = (theme && Object.keys(theme).length > 0)
+          ? JSON.stringify(theme, null, 2)
+          : '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+        this.themeJsonText = text;
+        this.themeBaselineText = text;
+        this.themeDirty = false;
+        this.themeUiState = 'idle';
+      },
+      error: () => {
+        this.themeUiState = 'idle';
+        this.themeSaveError = 'Failed to reload theme.';
       }
     });
   }
@@ -141,5 +259,27 @@ export class ConfigurationComponent implements OnInit {
         this.configForm.markAsUntouched();
       });
     });
+  }
+
+  onResetToDefault(): void {
+    if (this.uiState !== 'idle') return;
+
+    // Hardcoded defaults
+    const defaultActivities = ['Home', 'Healthcare', 'Pharmacy', 'Grocery', 'Wellness', 'Other'];
+    const defaultTransports = ['Walk', 'Bicycle', 'Drove Myself', 'Driven by Someone Else', 'Bus', 'Train', 'Other'];
+    const defaultEmotionLabels = { top: 'Calm', right: 'Satisfied', bottom: 'Stressed', left: 'Dissatisfied' };
+
+    this.configForm.patchValue({
+      activityCsv: defaultActivities.join(', '),
+      transportCsv: defaultTransports.join(', '),
+      labelTop: defaultEmotionLabels.top,
+      labelRight: defaultEmotionLabels.right,
+      labelBottom: defaultEmotionLabels.bottom,
+      labelLeft: defaultEmotionLabels.left
+    });
+
+    this.configForm.markAsDirty();
+    this.saveSuccess = false;
+    this.saveError = null;
   }
 } 

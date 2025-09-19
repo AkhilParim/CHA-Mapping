@@ -22,6 +22,7 @@ const client = new MongoClient(dbEndPoint);
 
 let db;
 let configCollection;
+let themeCollection;
 
 // Connect to MongoDB
 async function connectToDatabase() {
@@ -29,6 +30,7 @@ async function connectToDatabase() {
         await client.connect();
         db = client.db('PlaceEditor');
         configCollection = db.collection('app_configuration');
+        themeCollection = db.collection('theme_configuration');
         await client.db("admin").command({ ping: 1 });
     } catch (error) {
         process.exit(1);
@@ -36,6 +38,78 @@ async function connectToDatabase() {
 }
 
 // API Routes
+
+// --- THEME CONFIGURATION ---
+const THEME_ALLOWED_KEYS = new Set([
+    '--text', '--text-muted', '--text-disabled', '--text-secondary',
+    '--primary-50', '--primary-500', '--primary-600', '--primary-700',
+    '--on-primary'
+]);
+
+function isValidColor(value) {
+    if (typeof value !== 'string') return false;
+    const hex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    const rgb = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(\s*,\s*(0|1|0?\.\d+))?\s*\)$/;
+    const hsl = /^hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%(\s*,\s*(0|1|0?\.\d+))?\s*\)$/;
+    return hex.test(value) || rgb.test(value) || hsl.test(value);
+}
+
+function validateThemePayload(body) {
+    const errors = [];
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { valid: false, errors: ['Body must be a JSON object.'] };
+    }
+    const theme = body.theme;
+    if (!theme || typeof theme !== 'object' || Array.isArray(theme)) {
+        return { valid: false, errors: ['"theme" must be an object mapping CSS vars to values.'] };
+    }
+    for (const key of Object.keys(theme)) {
+        if (!THEME_ALLOWED_KEYS.has(key)) {
+            errors.push(`Unknown token key: ${key}`);
+        }
+    }
+    // Validate values
+    for (const key of THEME_ALLOWED_KEYS) {
+        if (!(key in theme)) continue; // optional keys
+        const value = theme[key];
+        // Colors
+        if (!isValidColor(value)) {
+            errors.push(`Invalid color value for ${key}: ${value}`);
+        }
+    }
+    return { valid: errors.length === 0, errors };
+}
+
+// GET /theme - Retrieve theme overrides (returns empty theme if not set)
+app.get('/theme', async (req, res) => {
+    try {
+        const themeDoc = await themeCollection.findOne({});
+        if (!themeDoc) {
+            return res.json({ theme: {}, lastUpdated: null });
+        }
+        return res.json({ theme: themeDoc.theme || {}, lastUpdated: themeDoc.lastUpdated || null });
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to retrieve theme configuration' });
+    }
+});
+
+// POST /theme - Validate and save theme overrides
+app.post('/theme', async (req, res) => {
+    try {
+        const validation = validateThemePayload(req.body);
+        if (!validation.valid) {
+            return res.status(400).json({ success: false, errors: validation.errors });
+        }
+        const themeData = {
+            lastUpdated: new Date(),
+            theme: req.body.theme
+        };
+        await themeCollection.replaceOne({}, themeData, { upsert: true });
+        return res.json({ success: true, message: 'Theme saved successfully', data: themeData });
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to save theme configuration' });
+    }
+});
 
 // GET /configuration - Retrieve configuration
 app.get('/configuration', async (req, res) => {
