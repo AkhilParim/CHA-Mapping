@@ -76,36 +76,36 @@
         padding-bottom: 8px;
         margin-bottom: -8px;
         scrollbar-width: thin;
-        scrollbar-color: var(--primary-500) #edf2ff;
+        scrollbar-color: var(--color-accent) #edf2ff;
         scroll-behavior: smooth;
     }
 }
 
 .date-selector::-webkit-scrollbar {
     height: 6px;
-    background-color: var(--primary-50);
+    background-color: var(--color-accent-50);
     border-radius: 3px;
 }
 
 .date-selector::-webkit-scrollbar-track {
-    background: var(--primary-50);
+    background: var(--color-accent-50);
     border-radius: 3px;
 }
 
 .date-selector::-webkit-scrollbar-thumb {
-    background: var(--primary-500);
+    background: var(--color-accent);
     border-radius: 3px;
     min-width: 40px;
 }
 
 .date-selector::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-700);
+    background: var(--color-accent-active);
 }
 
 .date {
     padding: 10px 16px;
     background-color: var(--surface);
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     border: 1px solid var(--border);
     border-bottom: none;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -123,22 +123,22 @@
     flex-shrink: 0;
     
     &:hover:not(.active) {
-        background-color: var(--primary-50);
-        color: var(--primary-700);
+        background-color: var(--color-accent-50);
+        color: var(--color-accent-active);
     }
 
     &.active {
-        background-color: var(--primary-500);
-        color: var(--on-primary);
-        border-color: var(--primary-500);
+        background-color: var(--color-accent);
+        color: var(--color-on-accent);
+        border-color: var(--color-accent);
         font-weight: 600;
         z-index: 1;
         box-shadow: 0 2px 4px rgba(76, 110, 245, 0.2);
         border-bottom: 4px solid;
 
         &:hover {
-            background-color: var(--primary-700);
-            border-color: var(--primary-700);
+            background-color: var(--color-accent-active);
+            border-color: var(--color-accent-active);
         }
     }
 }
@@ -146,7 +146,7 @@
 .add-date {
     padding: 10px 16px;
     background-color: var(--surface-alt);
-    color: var(--primary-500);
+    color: var(--color-accent);
     border: 1px solid var(--border);
     border-bottom: none;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -173,8 +173,8 @@
     }
     
     &:hover {
-        background-color: var(--primary-50);
-        color: var(--primary-700);
+        background-color: var(--color-accent-50);
+        color: var(--color-accent-active);
     }
 
     @media (max-width: 768px) {
@@ -223,7 +223,7 @@
         border-radius: var(--radius-md);
         margin-bottom: 8px;
         cursor: pointer;
-        color: var(--text);
+        color: var(--color-text-default);
         transition: all 0.2s ease;
         font-size: 15px;
         line-height: 1.5;
@@ -234,15 +234,15 @@
         }
         
         &:hover {
-            background-color: var(--primary-50);
+            background-color: var(--color-accent-50);
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
         }
         
         &.selected {
-            background-color: var(--primary-50);
-            border-color: var(--primary-500);
-            color: var(--primary-700);
+            background-color: var(--color-accent-50);
+            border-color: var(--color-accent);
+            color: var(--color-accent-active);
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
         }
@@ -282,21 +282,21 @@
         transition: all 0.2s ease;
         
         &.add-btn {
-            background-color: var(--primary-500);
-            color: var(--on-primary);
+            background-color: var(--color-accent);
+            color: var(--color-on-accent);
             
             &:hover:not(.disabled) {
-                background-color: var(--primary-700);
+                background-color: var(--color-accent-active);
             }
         }
         
         &.edit-btn {
             background-color: var(--surface-alt);
-            color: var(--primary-500);
-            border: 1px solid var(--primary-500);
+            color: var(--color-accent);
+            border: 1px solid var(--color-accent);
             
             &:hover:not(.disabled) {
-                background-color: var(--primary-50);
+                background-color: var(--color-accent-50);
             }
         }
         
@@ -348,7 +348,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--on-primary);
+            color: var(--color-on-accent);
             font-weight: bold;
             font-size: 14px;
             border: 2px solid white;
@@ -359,7 +359,7 @@
                 top: -8px;
                 right: -8px;
                 background-color: var(--danger-600);
-                color: var(--on-primary);
+                color: var(--color-on-accent);
                 border-radius: 50%;
                 width: 20px;
                 height: 20px;
@@ -376,9 +376,9 @@
             background-color: #228be6;
         }
         .selected-marker {
-            background-color: var(--primary-700) !important;
+            background-color: var(--color-accent-active) !important;
             z-index: 10;
-            border: 2px solid var(--primary-700);
+            border: 2px solid var(--color-accent-active);
             width: 40px;
             height: 40px;
             font-size: 18px;
@@ -427,12 +427,12 @@
         }
         
         &.submit-btn {
-            background-color: var(--primary-600);
-            color: var(--on-primary);
+            background-color: var(--color-accent-hover);
+            color: var(--color-on-accent);
             box-shadow: 0 2px 4px rgba(76, 110, 245, 0.1);
             
             &:hover {
-                background-color: var(--primary-700);
+                background-color: var(--color-accent-active);
                 transform: translateY(-1px);
                 box-shadow: 0 4px 6px rgba(76, 110, 245, 0.2);
             }

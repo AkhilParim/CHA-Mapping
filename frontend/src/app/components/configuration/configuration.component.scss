@@ -34,7 +34,7 @@ label:not(.fieldset-subtitle) {
 }
 
 .hint {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   margin-bottom: 6px;
 }
 
@@ -43,7 +43,7 @@ input[type="text"] {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--text);
+  color: var(--color-text-default);
 }
 
 .error {
@@ -105,7 +105,7 @@ textarea {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--text);
+  color: var(--color-text-default);
   resize: vertical;
 }
 
@@ -140,8 +140,8 @@ textarea {
 }
 
 button[type="submit"] {
-  background: var(--primary-600);
-  color: var(--on-primary);
+  background: var(--color-accent-hover);
+  color: var(--color-on-accent);
   border: none;
   padding: 10px 14px;
   border-radius: 6px;
@@ -150,7 +150,7 @@ button[type="submit"] {
 
 button.secondary {
   background: var(--surface);
-  color: var(--text);
+  color: var(--color-text-default);
   border: 1px solid transparent;
   padding: 10px 14px;
   border-radius: 6px;
@@ -166,7 +166,7 @@ button.secondary {
 }
 
 .status.success {
-  color: var(--text);
+  color: var(--color-text-default);
   background: #ecfdf5; /* light green */
   border: 1px solid #a7f3d0; /* green-200 */
   padding: 8px 10px;
@@ -175,7 +175,7 @@ button.secondary {
 }
 
 .status.error {
-  color: var(--text);
+  color: var(--color-text-default);
   background: var(--danger-50);
   border: 1px solid var(--danger-300);
   padding: 8px 10px;
@@ -184,7 +184,7 @@ button.secondary {
 } 
 
 .status.info {
-  color: var(--text);
+  color: var(--color-text-default);
   background: var(--warning-50);
   border: 1px solid var(--warning-100);
   padding: 8px 10px;

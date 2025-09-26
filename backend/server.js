@@ -41,9 +41,9 @@ async function connectToDatabase() {
 
 // --- THEME CONFIGURATION ---
 const THEME_ALLOWED_KEYS = new Set([
-    '--text', '--text-muted', '--text-disabled', '--text-secondary',
-    '--primary-50', '--primary-500', '--primary-600', '--primary-700',
-    '--on-primary'
+    '--color-text-default', '--color-text-muted', '--color-text-disabled', '--color-text-secondary',
+    '--color-accent-50', '--color-accent', '--color-accent-hover', '--color-accent-active',
+    '--color-on-accent'
 ]);
 
 function isValidColor(value) {

@@ -13,8 +13,48 @@ html, body {
 
 body {
     font-family: var(--font-family-sans);
-    color: var(--text);
+    color: var(--color-text-default);
     background-color: var(--bg);
+}
+
+/* Angular Material primary color overrides to use runtime theme tokens */
+:root {
+    /* Many MDC-based components read this CSS var */
+    --mdc-theme-primary: var(--color-accent);
+}
+
+/* Filled (flat/raised) buttons using color="primary" */
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-fab.mat-primary,
+.mat-mdc-mini-fab.mat-primary {
+    background-color: var(--color-accent) !important;
+    color: var(--color-on-accent) !important;
+}
+
+.mat-mdc-unelevated-button.mat-primary:hover,
+.mat-mdc-raised-button.mat-primary:hover,
+.mat-mdc-fab.mat-primary:hover,
+.mat-mdc-mini-fab.mat-primary:hover {
+    background-color: var(--color-accent-active) !important;
+}
+
+/* Text buttons using color="primary" */
+.mat-mdc-button.mat-primary {
+    color: var(--color-accent) !important;
+}
+.mat-mdc-button.mat-primary:hover {
+    color: var(--color-accent-active) !important;
+}
+
+/* Outlined buttons using color="primary" */
+.mat-mdc-outlined-button.mat-primary {
+    color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+}
+.mat-mdc-outlined-button.mat-primary:hover {
+    color: var(--color-accent-active) !important;
+    border-color: var(--color-accent-active) !important;
 }
 
 p {

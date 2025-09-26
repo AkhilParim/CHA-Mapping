@@ -20,7 +20,7 @@ export class ConfigurationComponent implements OnInit {
   themeUiState: 'idle' | 'saving' | 'refreshing' = 'idle';
   themeSaveSuccess = false;
   themeSaveError: string | null = null;
-  themeJsonText = '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+  themeJsonText = '{\n  "--color-text-default": "#1e293b",\n  "--color-text-muted": "#64748b",\n  "--color-text-disabled": "#9ca3af",\n  "--color-text-secondary": "#495057",\n  "--color-accent-50": "#edf2ff",\n  "--color-accent": "#4c6ef5",\n  "--color-accent-hover": "#4f46e5",\n  "--color-accent-active": "#4338ca",\n  "--color-on-accent": "#ffffff"\n}';
   themeBaselineText = '';
   themeDirty = false;
 
@@ -40,6 +40,13 @@ export class ConfigurationComponent implements OnInit {
       labelRight: [''],
       labelBottom: [''],
       labelLeft: ['']
+    });
+
+    // When Options form changes after a save, clear the success flag so Unsaved status can show
+    this.configForm.valueChanges.subscribe(() => {
+      if (this.uiState === 'idle') {
+        this.saveSuccess = false;
+      }
     });
 
     // Populate form from current configuration
@@ -153,7 +160,7 @@ export class ConfigurationComponent implements OnInit {
     }
     // Simple key whitelist enforcement client-side
     const allowedKeys = new Set([
-      '--text','--text-muted','--text-disabled','--text-secondary','--primary-50','--primary-500','--primary-600','--primary-700','--on-primary'
+      '--color-text-default','--color-text-muted','--color-text-disabled','--color-text-secondary','--color-accent-50','--color-accent','--color-accent-hover','--color-accent-active','--color-on-accent'
     ]);
     for (const key of Object.keys(parsed)) {
       if (!allowedKeys.has(key)) {
@@ -184,10 +191,11 @@ export class ConfigurationComponent implements OnInit {
 
   onThemeResetToDefault(): void {
     if (this.themeUiState !== 'idle') return;
-    this.themeJsonText = '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+    this.themeJsonText = '{\n  "--color-text-default": "#1e293b",\n  "--color-text-muted": "#64748b",\n  "--color-text-disabled": "#9ca3af",\n  "--color-text-secondary": "#495057",\n  "--color-accent-50": "#edf2ff",\n  "--color-accent": "#4c6ef5",\n  "--color-accent-hover": "#4f46e5",\n  "--color-accent-active": "#4338ca",\n  "--color-on-accent": "#ffffff"\n}';
     this.themeSaveSuccess = false;
     this.themeSaveError = null;
-    this.themeDirty = this.themeJsonText !== this.themeBaselineText;
+    // Force dirty state to surface the Unsaved status after reset
+    this.themeDirty = true;
   }
 
   private applyTheme(tokens: ThemeTokens) {
@@ -210,6 +218,8 @@ export class ConfigurationComponent implements OnInit {
 
   onThemeChange(nextValue: string): void {
     this.themeDirty = nextValue !== this.themeBaselineText;
+    // Clear previous success so "Unsaved changes" can show after edits
+    this.themeSaveSuccess = false;
   }
 
   onThemeCancel(): void {
@@ -222,7 +232,7 @@ export class ConfigurationComponent implements OnInit {
         const theme = resp?.theme || {};
         const text = (theme && Object.keys(theme).length > 0)
           ? JSON.stringify(theme, null, 2)
-          : '{\n  "--text": "#1e293b",\n  "--text-muted": "#64748b",\n  "--text-disabled": "#9ca3af",\n  "--text-secondary": "#495057",\n  "--primary-50": "#edf2ff",\n  "--primary-500": "#4c6ef5",\n  "--primary-600": "#4f46e5",\n  "--primary-700": "#4338ca",\n  "--on-primary": "#ffffff"\n}';
+          : '{\n  "--color-text-default": "#1e293b",\n  "--color-text-muted": "#64748b",\n  "--color-text-disabled": "#9ca3af",\n  "--color-text-secondary": "#495057",\n  "--color-accent-50": "#edf2ff",\n  "--color-accent": "#4c6ef5",\n  "--color-accent-hover": "#4f46e5",\n  "--color-accent-active": "#4338ca",\n  "--color-on-accent": "#ffffff"\n}';
         this.themeJsonText = text;
         this.themeBaselineText = text;
         this.themeDirty = false;

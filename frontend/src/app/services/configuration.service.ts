@@ -21,15 +21,15 @@ export interface AppConfiguration {
 }
 
 export type ThemeTokens = {
-  '--text'?: string;
-  '--text-muted'?: string;
-  '--text-disabled'?: string;
-  '--text-secondary'?: string;
-  '--primary-50'?: string;
-  '--primary-500'?: string;
-  '--primary-600'?: string;
-  '--primary-700'?: string;
-  '--on-primary'?: string;
+  '--color-text-default'?: string;
+  '--color-text-muted'?: string;
+  '--color-text-disabled'?: string;
+  '--color-text-secondary'?: string;
+  '--color-accent-50'?: string;
+  '--color-accent'?: string;
+  '--color-accent-hover'?: string;
+  '--color-accent-active'?: string;
+  '--color-on-accent'?: string;
 };
 
 export interface ThemeConfigResponse {

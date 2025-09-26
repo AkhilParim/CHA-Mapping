@@ -63,7 +63,7 @@
   <!-- THEME BLOCK -->
   <div class="fieldset">
     <div class="fieldset-title">Theme</div>
-    <div class="hint">Allowed keys: --text, --text-muted, --text-disabled, --text-secondary, --primary-50, --primary-500, --primary-600, --primary-700, --on-primary</div>
+    <div class="hint">Allowed keys: --color-text-default, --color-text-muted, --color-text-disabled, --color-text-secondary, --color-accent-50, --color-accent, --color-accent-hover, --color-accent-active, --color-on-accent</div>
     <div class="theme-editor">
       <label for="themeJson" class="sr-only">Theme JSON</label>
       <textarea id="themeJson" [(ngModel)]="themeJsonText" (ngModelChange)="onThemeChange($event)" [ngModelOptions]="{standalone: true}" spellcheck="false"></textarea>

@@ -7,7 +7,7 @@
 
 .header {
   .subtitle {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     margin: 4px 0 0 0;
   }
 }
@@ -26,7 +26,7 @@
 
 .hint {
   margin: 6px 0 12px 0;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .status {
@@ -41,14 +41,14 @@
 
 .exit-btn[disabled] {
   background: var(--disabled-bg) !important;
-  color: var(--text-disabled) !important;
+  color: var(--color-text-disabled) !important;
   cursor: not-allowed !important;
   box-shadow: none !important;
 }
 
 .exit-btn:not([disabled]) {
-  background: var(--primary-600) !important;
-  color: var(--on-primary) !important;
+  background: var(--color-accent-hover) !important;
+  color: var(--color-on-accent) !important;
 }
 
 .exit-btn:not([disabled]):hover {
