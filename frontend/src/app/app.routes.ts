@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { PlaceEditorComponent } from './components/place-editor/place-editor.component';
 import { JourneyPlannerComponent } from './components/journey-planner/journey-planner.component';
 import { ConfigurationComponent } from './components/configuration/configuration.component';
+import { AddressLookupComponent } from './components/address-lookup/address-lookup.component';
 
 export const routes: Routes = [
     {
@@ -15,6 +16,10 @@ export const routes: Routes = [
     {
         path: 'configuration',
         component: ConfigurationComponent
+    },
+    {
+        path: 'address-lookup',
+        component: AddressLookupComponent
     },
     {
         path: '',
