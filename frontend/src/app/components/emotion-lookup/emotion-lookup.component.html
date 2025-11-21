@@ -1,0 +1,78 @@
+<div class="emotion-lookup-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">Emotion Lookup</h1>
+      <p class="subtitle">Choose how this place feels to you</p>
+    </div>
+    <div class="header-right">
+      <button type="button" class="header-nav-btn" (click)="goToAddressLookup()">
+        Go to: Address Lookup
+      </button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <!-- Left Panel: Emotion summary and copy -->
+    <div class="left-panel">
+      <div class="summary-section">
+        <h2 class="section-title">Selected Emotion</h2>
+
+        <div class="summary-card" *ngIf="selectedEmotion">
+          <div class="summary-text">
+            {{ selectedEmotion.text }}
+          </div>
+          <div class="coordinates-info">
+            <span class="coordinates-label">Coordinates</span>
+            <span class="coordinates-value">
+              x: {{ selectedEmotion.x | number:'1.2-2' }},
+              y: {{ selectedEmotion.y | number:'1.2-2' }}
+            </span>
+          </div>
+          <p class="helper-text">
+            These coordinates are normalized between -1 and 1 and will be used by the facilitator to place the dot on their grid.
+          </p>
+        </div>
+
+        <div class="no-selection" *ngIf="!selectedEmotion">
+          Click or drag on the grid to select how this place feels.
+        </div>
+
+        <div class="button-group">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="copyEmotion()"
+            [disabled]="!selectedEmotion"
+          >
+            Copy Emotion Coordinates
+          </button>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div class="message success-message" *ngIf="copySuccess">
+          Emotion coordinates copied to clipboard!
+        </div>
+        <div class="message error-message" *ngIf="copyError">
+          Failed to copy. Please try selecting and copying manually.
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Emotion grid -->
+    <div class="right-panel">
+      <div class="emotion-grid-wrapper">
+        <app-emotion-grid
+          [topLabel]="emotionLabelTop || 'Calm'"
+          [rightLabel]="emotionLabelRight || 'Satisfied'"
+          [bottomLabel]="emotionLabelBottom || 'Stressed'"
+          [leftLabel]="emotionLabelLeft || 'Dissatisfied'"
+          [value]="selectedEmotion"
+          (valueChange)="onEmotionChange($event)"
+        ></app-emotion-grid>
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -279,21 +279,37 @@
                 There is an issue with loading the configurations. Please try again later. If the problem persists, please contact support.
               </div>
             <div class="emotion-section">
-                <div class="emotion-grid">
-                    <div class="emotion-label top">{{ emotionLabelTop || 'Calm' }}</div>
-                    <div class="emotion-label left">{{ emotionLabelLeft || 'Dissatisfied' }}</div>
-                    <div class="emotion-label right">{{ emotionLabelRight || 'Satisfied' }}</div>
-                    <div class="emotion-label bottom">{{ emotionLabelBottom || 'Stressed' }}</div>
-                    <div class="grid-container" #emotionGrid [class.grabbing]="isDraggingEmotion">
-                        <div class="emotion-indicator" *ngIf="selectedEmotion && getEmotionDisplayCoordinates()" 
-                             [style.left.px]="getEmotionDisplayCoordinates()!.x" 
-                             [style.top.px]="getEmotionDisplayCoordinates()!.y">
-                            <div class="emotion-annotation" *ngIf="selectedEmotion?.text as desc">
-                                {{ desc }}
-                            </div>
-                            <div class="emotion-dot"></div>
-                        </div>
+                <div class="emotion-import">
+                    <label for="emotionPaste">Paste Emotion Coordinates from Emotion Lookup Page</label>
+                    <div class="emotion-paste-row">
+                        <input
+                          id="emotionPaste"
+                          type="text"
+                          class="emotion-paste-input"
+                          placeholder='Emotion coordinates'
+                        #emotionPasteInput
+                        />
+                        <button
+                          type="button"
+                          class="emotion-paste-btn"
+                          (click)="onEmotionPaste(emotionPasteInput.value)"
+                        >
+                          Apply
+                        </button>
                     </div>
+                    <div class="error-message" *ngIf="emotionPasteError">
+                        {{ emotionPasteError }}
+                    </div>
+                </div>
+                <div class="emotion-grid">
+                    <app-emotion-grid
+                      [topLabel]="emotionLabelTop || 'Calm'"
+                      [rightLabel]="emotionLabelRight || 'Satisfied'"
+                      [bottomLabel]="emotionLabelBottom || 'Stressed'"
+                      [leftLabel]="emotionLabelLeft || 'Dissatisfied'"
+                      [value]="placeForm.value.emotion"
+                      (valueChange)="onEmotionGridChange($event)"
+                    ></app-emotion-grid>
                 </div>
             </div>
             <div class="details-section">

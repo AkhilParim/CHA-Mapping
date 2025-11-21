@@ -1,0 +1,35 @@
+<div class="emotion-grid">
+  <div class="emotion-label top">{{ topLabel || 'Calm' }}</div>
+  <div class="emotion-label left">{{ leftLabel || 'Dissatisfied' }}</div>
+  <div class="emotion-label right">{{ rightLabel || 'Satisfied' }}</div>
+  <div class="emotion-label bottom">{{ bottomLabel || 'Stressed' }}</div>
+
+  <div
+    class="grid-container"
+    #grid
+    [class.grabbing]="isDragging"
+    (click)="onGridClick($event)"
+    (mousedown)="onGridMouseDown($event)"
+    (mousemove)="onGridMouseMove($event)"
+    (mouseup)="onGridMouseUp()"
+    (mouseleave)="onGridMouseLeave()"
+  >
+    <div class="axis axis-x"></div>
+    <div class="axis axis-y"></div>
+
+    <ng-container *ngIf="getDisplayCoordinates() as coords">
+      <div
+        class="emotion-indicator"
+        [style.left.px]="coords.x"
+        [style.top.px]="coords.y"
+      >
+        <div class="emotion-annotation">
+          {{ selectedEmotion.text }}
+        </div>
+        <div class="emotion-dot"></div>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+

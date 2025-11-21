@@ -15,6 +15,7 @@ import { GeojsonService } from '../../services/geojson.service';
 import { ConfigurationService } from '../../services/configuration.service';
 import { HttpClientModule } from '@angular/common/http';
 import { Collection } from '../../services/geojson.service';
+import { EmotionGridComponent, EmotionGridValue } from '../emotion-grid/emotion-grid.component';
 
 interface EmotionState {
   x: number; // normalized coordinate: -1 to 1 (left to right)
@@ -70,7 +71,7 @@ interface PlaceFormData {
 @Component({
   selector: 'app-place-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule, EmotionGridComponent],
   providers: [GeojsonService, ConfigurationService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './place-editor.component.html',
@@ -81,7 +82,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('fromAddressSearch') fromAddressSearch!: ElementRef;
   @ViewChild('poiAddressSearch') poiAddressSearch!: ElementRef;
   @ViewChild('toAddressSearch') toAddressSearch!: ElementRef;
-  @ViewChild('emotionGrid') emotionGrid!: ElementRef;
 
   placeForm!: FormGroup;
   map!: mapboxgl.Map;
@@ -116,12 +116,14 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   emotionLabelLeft: string = '';
 
   // Emotion grid properties
-  showCrosshair = false;
-  crosshairPosition = { x: 0, y: 0 };
   selectedEmotion: EmotionState | null = null;
-  isDraggingEmotion = false;
-  private resizeHandler?: () => void;
   private configSubscription?: Subscription;
+
+  /**
+   * Handle JSON emotion pasted from interviewee (from Emotion Lookup page)
+   * Expected format: {"x": number, "y": number, "text": string}
+   */
+  emotionPasteError: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -222,10 +224,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
               y: place.emotion.y,
               text: place.emotion.text || this.getEmotionText((place.emotion.x + 1) / 2, (place.emotion.y + 1) / 2)
             };
-            // Update display after a short delay to ensure the emotion grid is rendered
-            setTimeout(() => {
-              this.updateEmotionDisplay();
-            }, 100);
           }
         }
       }
@@ -260,17 +258,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.initializeMap();
-    this.initializeEmotionGrid();
-    
-    // Update emotion display after view initialization
-    setTimeout(() => {
-      // Default to center if not set
-      if (!this.selectedEmotion) {
-        this.selectedEmotion = { x: 0, y: 0, text: this.getEmotionText(0.5, 0.5) };
-        this.placeForm.patchValue({ emotion: this.selectedEmotion });
-      }
-      this.updateEmotionDisplay();
-    }, 100);
   }
 
   ngOnDestroy(): void {
@@ -278,11 +265,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.map.remove();
     }
     this.removeMarkers();
-    
-    // Remove resize event listener
-    if (this.resizeHandler) {
-      window.removeEventListener('resize', this.resizeHandler);
-    }
     
     // Unsubscribe from configuration changes
     if (this.configSubscription) {
@@ -496,64 +478,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private initializeEmotionGrid(): void {
-    const grid = this.emotionGrid.nativeElement;
-    
-    grid.addEventListener('mousemove', (e: MouseEvent) => {
-      const rect = grid.getBoundingClientRect();
-      this.showCrosshair = true;
-      this.crosshairPosition = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
-      if (this.isDraggingEmotion) {
-        this.setEmotionFromPixel(this.crosshairPosition.x, this.crosshairPosition.y, rect);
-      }
-    });
-
-    grid.addEventListener('mouseleave', () => {
-      this.showCrosshair = false;
-      this.isDraggingEmotion = false;
-    });
-
-    grid.addEventListener('click', (e: MouseEvent) => {
-      const rect = grid.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      this.setEmotionFromPixel(x, y, rect);
-    });
-
-    grid.addEventListener('mousedown', (e: MouseEvent) => {
-      const rect = grid.getBoundingClientRect();
-      this.isDraggingEmotion = true;
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      this.setEmotionFromPixel(x, y, rect);
-    });
-
-    window.addEventListener('mouseup', () => {
-      this.isDraggingEmotion = false;
-    });
-
-    // Add resize listener to update emotion display when grid size changes
-    this.resizeHandler = this.updateEmotionDisplay.bind(this);
-    window.addEventListener('resize', this.resizeHandler);
-  }
-
-  private setEmotionFromPixel(pixelX: number, pixelY: number, gridRect: DOMRect): void {
-    const x = Math.max(0, Math.min(gridRect.width, pixelX));
-    const y = Math.max(0, Math.min(gridRect.height, pixelY));
-    const normalized = this.pixelToNormalized(x, y, gridRect);
-    const xPercent = x / gridRect.width;
-    const yPercent = y / gridRect.height;
-    this.selectedEmotion = {
-      x: normalized.x,
-      y: normalized.y,
-      text: this.getEmotionText(xPercent, yPercent)
-    };
-    this.placeForm.patchValue({ emotion: this.selectedEmotion });
-  }
-
 
 
 
@@ -591,70 +515,6 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
    * @param gridRect - Grid element's bounding rectangle
    * @returns Normalized coordinates
    */
-  private pixelToNormalized(pixelX: number, pixelY: number, gridRect: DOMRect): { x: number, y: number } {
-    // Convert pixel position to percentage (0 to 1)
-    const xPercent = pixelX / gridRect.width;
-    const yPercent = pixelY / gridRect.height;
-    
-    // Convert percentage to normalized coordinates (-1 to 1)
-    const normalizedX = (xPercent * 2) - 1; // 0->1 becomes -1->1
-    const normalizedY = (yPercent * 2) - 1; // 0->1 becomes -1->1
-    
-    return { x: normalizedX, y: normalizedY };
-  }
-
-  /**
-   * Convert normalized coordinates (-1 to 1) to pixel coordinates
-   * @param normalizedX - Normalized X coordinate (-1 to 1)
-   * @param normalizedY - Normalized Y coordinate (-1 to 1)
-   * @param gridRect - Grid element's bounding rectangle
-   * @returns Pixel coordinates
-   */
-  private normalizedToPixel(normalizedX: number, normalizedY: number, gridRect: DOMRect): { x: number, y: number } {
-    // Convert normalized coordinates to percentage (0 to 1)
-    const xPercent = (normalizedX + 1) / 2; // -1->1 becomes 0->1
-    const yPercent = (normalizedY + 1) / 2; // -1->1 becomes 0->1
-    
-    // Convert percentage to pixel coordinates
-    const pixelX = xPercent * gridRect.width;
-    const pixelY = yPercent * gridRect.height;
-    
-    return { x: pixelX, y: pixelY };
-  }
-
-  /**
-   * Update emotion display based on current grid size
-   */
-  private updateEmotionDisplay(): void {
-    if (this.selectedEmotion && this.emotionGrid) {
-      const gridRect = this.emotionGrid.nativeElement.getBoundingClientRect();
-      const pixelCoords = this.normalizedToPixel(
-        this.selectedEmotion.x, 
-        this.selectedEmotion.y, 
-        gridRect
-      );
-      
-      // Update the display coordinates (these are used for positioning the emotion indicator)
-      this.selectedEmotion = {
-        ...this.selectedEmotion,
-        x: this.selectedEmotion.x, // Keep normalized coordinates for storage
-        y: this.selectedEmotion.y // Keep normalized coordinates for storage
-      };
-    }
-  }
-
-  /**
-   * Get pixel coordinates for display purposes
-   */
-  getEmotionDisplayCoordinates(): { x: number, y: number } | null {
-    if (!this.selectedEmotion || !this.emotionGrid) {
-      return null;
-    }
-    
-    const gridRect = this.emotionGrid.nativeElement.getBoundingClientRect();
-    return this.normalizedToPixel(this.selectedEmotion.x, this.selectedEmotion.y, gridRect);
-  }
-
   /**
    * Check if the given label is already in use by another place
    */
@@ -847,6 +707,55 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return 2;
     } else {
       return 3;
+    }
+  }
+
+  // Emotion grid callback from shared component
+  onEmotionGridChange(value: EmotionGridValue): void {
+    // Keep local selectedEmotion in sync for backwards compatibility
+    this.selectedEmotion = {
+      x: value.x,
+      y: value.y,
+      text: value.text
+    };
+    // Store emotion on the form so summary / persistence keep working
+    this.placeForm.patchValue({ emotion: this.selectedEmotion });
+  }
+
+  onEmotionPaste(raw: string): void {
+    this.emotionPasteError = null;
+    const trimmed = (raw || '').trim();
+    if (!trimmed) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Not an object');
+      }
+
+      if (typeof parsed.x !== 'number' || typeof parsed.y !== 'number') {
+        throw new Error('Missing x or y numeric values');
+      }
+
+      // Clamp to [-1, 1] to be safe
+      const x = Math.max(-1, Math.min(1, parsed.x));
+      const y = Math.max(-1, Math.min(1, parsed.y));
+
+      // Use provided text if present, otherwise derive from coordinates
+      const text =
+        typeof parsed.text === 'string' && parsed.text.trim().length > 0
+          ? parsed.text.trim()
+          : this.getEmotionText((x + 1) / 2, (y + 1) / 2);
+
+      const emotion: EmotionState = { x, y, text };
+      this.selectedEmotion = emotion;
+      this.placeForm.patchValue({ emotion });
+    } catch (err) {
+      console.error('Failed to parse pasted emotion JSON:', err);
+      this.emotionPasteError =
+        'Invalid emotion JSON. Expected format: {"x":0.13,"y":-0.62}';
     }
   }
 

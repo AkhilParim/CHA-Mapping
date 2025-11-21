@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-address-lookup',
@@ -27,7 +28,7 @@ export class AddressLookupComponent implements OnInit, AfterViewInit, OnDestroy 
   copyError = false;
   isLocatingUser = false;
 
-  constructor() {}
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
     mapboxgl.accessToken = environment.mapboxToken;
@@ -46,6 +47,11 @@ export class AddressLookupComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.marker) {
       this.marker.remove();
     }
+  }
+
+  // Navigation
+  goToEmotionLookup(): void {
+    this.router.navigate(['/emotion-lookup']);
   }
 
   initializeMap(): void {

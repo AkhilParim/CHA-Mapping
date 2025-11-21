@@ -3,6 +3,7 @@ import { PlaceEditorComponent } from './components/place-editor/place-editor.com
 import { JourneyPlannerComponent } from './components/journey-planner/journey-planner.component';
 import { ConfigurationComponent } from './components/configuration/configuration.component';
 import { AddressLookupComponent } from './components/address-lookup/address-lookup.component';
+import { EmotionLookupComponent } from './components/emotion-lookup/emotion-lookup.component';
 
 export const routes: Routes = [
     {
@@ -20,6 +21,10 @@ export const routes: Routes = [
     {
         path: 'address-lookup',
         component: AddressLookupComponent
+    },
+    {
+        path: 'emotion-lookup',
+        component: EmotionLookupComponent
     },
     {
         path: '',

@@ -764,131 +764,75 @@ form {
         .emotion-section {
             flex: 1;
             margin-bottom: 24px;
-            
-            .emotion-grid {
-                position: relative;
-                width: 100%;
-                height: 100%;
-                /* min-height: 300px; */
-                border: 1px solid #e9ecef;
-                border-radius: 12px;
-                background: linear-gradient(
-                    135deg,
-                    rgba(255, 235, 235, 0.2),
-                    rgba(248, 249, 250, 0.2) 50%,
-                    rgba(231, 245, 255, 0.2)
-                );
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                
-                .emotion-label {
-                    position: absolute;
-                    font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+
+            .emotion-import {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+
+                label {
+                    font-size: 13px;
                     font-weight: 500;
-                    color: #495057;
-                    transition: opacity 0.2s ease;
-                    z-index: 10;
-                    pointer-events: none;
-                    
-                    &.top {
-                        top: 12px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                    }
-                    
-                    &.bottom {
-                        bottom: 12px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                    }
-                    
-                    &.left {
-                        left: 12px;
-                        top: 50%;
-                        transform: translateY(-50%);
-                    }
-                    
-                    &.right {
-                        right: 12px;
-                        top: 50%;
-                        transform: translateY(-50%);
-                    }
+                    color: var(--color-text-secondary);
                 }
-                
-                .grid-container {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    cursor: grab;
-                    border-radius: 12px;
-                    background: linear-gradient(
-                        to right,
-                        rgba(255, 235, 235, 0.8),
-                        rgba(248, 249, 250, 0.8) 50%,
-                        rgba(231, 245, 255, 0.8)
-                    );
-                    
-                    .crosshair { display: none; }
-                    
-                    .emotion-indicator {
-                        position: absolute;
-                        transform: translate(-50%, -50%);
-                        z-index: 10;
-                        
-                        .emotion-annotation {
-                            position: absolute;
-                            bottom: 36px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: rgba(17, 24, 39, 0.9);
-                            color: #fff;
-                            padding: 4px 8px;
-                            font-size: 12px;
-                            border-radius: 6px;
-                            white-space: nowrap;
-                            pointer-events: none;
-                            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-                            user-select: none;
-                            -webkit-user-select: none;
-                            -moz-user-select: none;
-                            -ms-user-select: none;
+
+                .emotion-paste-row {
+                    display: flex;
+                    gap: 8px;
+
+                    .emotion-paste-input {
+                        flex: 1;
+                        padding: 6px 10px;
+                        font-size: 12px;
+                        border-radius: 6px;
+                        border: 1px solid var(--border-subtle);
+                        font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+                        color: var(--color-text-secondary);
+                        background: var(--surface);
+
+                        &:focus {
+                            outline: none;
+                            border-color: var(--color-accent-hover);
+                            box-shadow: 0 0 0 2px rgba(116, 192, 252, 0.1);
+                        }
+                    }
+
+                    .emotion-paste-btn {
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                        border: none;
+                        background: var(--color-accent);
+                        color: var(--color-on-accent);
+                        font-size: 12px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        transition: all 0.18s ease-in-out;
+
+                        &:hover {
+                            background: var(--color-accent-hover);
+                            box-shadow: 0 2px 6px rgba(76, 110, 245, 0.3);
+                            transform: translateY(-1px);
                         }
 
-                        .emotion-dot {
-                            width: 30px;
-                            height: 30px;
-                            background-color: var(--color-accent);
-                            border-radius: 50%;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                            border: 2px solid rgba(255, 255, 255, 0.8);
-                            transition: transform 0.2s ease;
-                            
-                            &:hover {
-                                transform: scale(1.1);
-                            }
-                            cursor: grab;
-                            &:active {
-                                cursor: grabbing;
-                            }
+                        &:active {
+                            background: var(--color-accent-active);
+                            transform: translateY(0);
                         }
                     }
-                    &.grabbing {
-                        cursor: grabbing;
-                    }
+                }
+
+                .error-message {
+                    font-size: 11px;
+                    color: var(--danger-600);
                 }
             }
-        }
-        
-        @keyframes pop {
-            0% {
-                transform: scale(0);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
+
+            .emotion-grid {
+                flex: 1;
             }
         }
         
