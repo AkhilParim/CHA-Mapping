@@ -278,39 +278,39 @@
             <div *ngIf="configurationService.configError" class="config-error-banner">
                 There is an issue with loading the configurations. Please try again later. If the problem persists, please contact support.
               </div>
-            <div class="emotion-section">
-                <div class="emotion-import">
-                    <label for="emotionPaste">Paste Emotion Coordinates from Emotion Lookup Page</label>
-                    <div class="emotion-paste-row">
+            <div class="perception-section">
+                <div class="perception-import">
+                    <label for="perceptionPaste">Paste Perception Coordinates from Perception Lookup Page</label>
+                    <div class="perception-paste-row">
                         <input
-                          id="emotionPaste"
+                          id="perceptionPaste"
                           type="text"
-                          class="emotion-paste-input"
-                          placeholder='Emotion coordinates'
+                          class="perception-paste-input"
+                           placeholder='Perception coordinates'
                           autocomplete="off"
-                        #emotionPasteInput
+                        #perceptionPasteInput
                         />
                         <button
                           type="button"
-                          class="emotion-paste-btn"
-                          (click)="onEmotionPaste(emotionPasteInput.value)"
+                          class="perception-paste-btn"
+                          (click)="onPerceptionPaste(perceptionPasteInput.value)"
                         >
                           Apply
                         </button>
                     </div>
-                    <div class="error-message" *ngIf="emotionPasteError">
-                        {{ emotionPasteError }}
+                    <div class="error-message" *ngIf="perceptionPasteError">
+                        {{ perceptionPasteError }}
                     </div>
                 </div>
-                <div class="emotion-grid">
-                    <app-emotion-grid
-                      [topLabel]="emotionLabelTop || 'Calm'"
-                      [rightLabel]="emotionLabelRight || 'Satisfied'"
-                      [bottomLabel]="emotionLabelBottom || 'Stressed'"
-                      [leftLabel]="emotionLabelLeft || 'Dissatisfied'"
-                      [value]="placeForm.value.emotion"
-                      (valueChange)="onEmotionGridChange($event)"
-                    ></app-emotion-grid>
+                <div class="perception-grid">
+                    <app-perception-grid
+                      [topLabel]="perceptionLabelTop || 'Calm'"
+                      [rightLabel]="perceptionLabelRight || 'Satisfied'"
+                      [bottomLabel]="perceptionLabelBottom || 'Stressed'"
+                      [leftLabel]="perceptionLabelLeft || 'Dissatisfied'"
+                      [value]="placeForm.value.perception"
+                      (valueChange)="onPerceptionGridChange($event)"
+                    ></app-perception-grid>
                 </div>
             </div>
             <div class="details-section">

@@ -102,8 +102,8 @@ export class ExportOptionsComponent {
         const fromCoords = place.fromCoordinates ? `${place.fromCoordinates[1]},${place.fromCoordinates[0]}` : '';
         const poiCoords = place.poiCoordinates ? `${place.poiCoordinates[1]},${place.poiCoordinates[0]}` : '';
         const toCoords = place.toCoordinates ? `${place.toCoordinates[1]},${place.toCoordinates[0]}` : '';
-        const feeling = place.emotion ? place.emotion.text : '';
-        const emotionXY = place.emotion ? `(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})` : '';
+        const feeling = place.perception ? place.perception.text : '';
+        const perceptionXY = place.perception ? `(${place.perception.x.toFixed(3)},${place.perception.y.toFixed(3)})` : '';
         const parts: string[] = [];
         parts.push(`${index + 1}) ${place.activityType}`);
         if (place.placeLabel) parts.push(`Place: ${place.placeLabel}`);
@@ -115,7 +115,7 @@ export class ExportOptionsComponent {
         if (place.timeSpentAtPoi != null) parts.push(`At POI: ${place.timeSpentAtPoi}m`);
         if (place.toAddress) parts.push(`To: ${place.toAddress}${toCoords ? ` [${toCoords}]` : ''}`);
         if (place.transportType) parts.push(`Transport: ${place.transportType}`);
-        if (feeling) parts.push(`Feeling: ${feeling}${emotionXY ? ` ${emotionXY}` : ''}`);
+        if (feeling) parts.push(`Feeling: ${feeling}${perceptionXY ? ` ${perceptionXY}` : ''}`);
         if (place.comments) parts.push(`Comments: ${place.comments}`);
         if (place.geoValues?.NDI != null) parts.push(`NDI: ${place.geoValues.NDI}`);
         if (place.geoValues?.tes != null) parts.push(`TES: ${place.geoValues.tes}`);
@@ -145,7 +145,7 @@ export class ExportOptionsComponent {
       'Arrive Time',
       'Transportation',
       'Feeling',
-      'Emotion Grid Coordinates',
+      'Perception Grid Coordinates',
       'Comments',
       'NDI (Neighborhood Deprivation Index)',
       'TES (Tree Equity Score)',
@@ -159,8 +159,8 @@ export class ExportOptionsComponent {
         const fromCoords = place.fromCoordinates ? `"${place.fromCoordinates[1]},${place.fromCoordinates[0]}"` : '';
         const poiCoords = place.poiCoordinates ? `"${place.poiCoordinates[1]},${place.poiCoordinates[0]}"` : '';
         const toCoords = place.toCoordinates ? `"${place.toCoordinates[1]},${place.toCoordinates[0]}"` : '';
-        const emotionText = place.emotion ? place.emotion.text : '';
-        const emotionCoords = place.emotion ? `"(${place.emotion.x.toFixed(3)},${place.emotion.y.toFixed(3)})"` : '';
+        const perceptionText = place.perception ? place.perception.text : '';
+        const perceptionCoords = place.perception ? `"(${place.perception.x.toFixed(3)},${place.perception.y.toFixed(3)})"` : '';
         const ndiValue = place.geoValues?.NDI ? place.geoValues.NDI.toString() : '';
         const tesValue = place.geoValues?.tes ? place.geoValues.tes.toString() : '';
         const mhlthValue = place.geoValues?.MHLTH_CrudePrev ? place.geoValues.MHLTH_CrudePrev.toString() : '';
@@ -180,8 +180,8 @@ export class ExportOptionsComponent {
           toCoords,
           this.escapeCSVField(place.arriveTime || ''),
           this.escapeCSVField(place.transportType),
-          this.escapeCSVField(emotionText),
-          emotionCoords,
+          this.escapeCSVField(perceptionText),
+          perceptionCoords,
           this.escapeCSVField(place.comments || ''),
           ndiValue,
           tesValue,

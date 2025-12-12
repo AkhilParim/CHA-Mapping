@@ -15,12 +15,12 @@ import { GeojsonService } from '../../services/geojson.service';
 import { ConfigurationService } from '../../services/configuration.service';
 import { HttpClientModule } from '@angular/common/http';
 import { Collection } from '../../services/geojson.service';
-import { EmotionGridComponent, EmotionGridValue } from '../emotion-grid/emotion-grid.component';
+import { PerceptionGridComponent, PerceptionGridValue } from '../perception-grid/perception-grid.component';
 
-interface EmotionState {
+interface PerceptionState {
   x: number; // normalized coordinate: -1 to 1 (left to right)
   y: number; // normalized coordinate: -1 to 1 (top to bottom)
-  text: string; // descriptive text of the emotion
+  text: string; // descriptive text of the perception
 }
 
 interface PlaceFormData {
@@ -40,7 +40,7 @@ interface PlaceFormData {
   transportType: string;
   comments: string;
   geoId?: string;
-  emotion?: EmotionState | null;
+  perception?: PerceptionState | null;
   geoVisualization?: {
     NDI?: {
       barNumber: number | null;
@@ -71,7 +71,7 @@ interface PlaceFormData {
 @Component({
   selector: 'app-place-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule, EmotionGridComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, HttpClientModule, PerceptionGridComponent],
   providers: [GeojsonService, ConfigurationService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './place-editor.component.html',
@@ -109,21 +109,21 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   activityTypes: string[] = [];
   transportTypes: string[] = [];
-  // Emotion labels from configuration
-  emotionLabelTop: string = '';
-  emotionLabelRight: string = '';
-  emotionLabelBottom: string = '';
-  emotionLabelLeft: string = '';
+  // Perception labels from configuration
+  perceptionLabelTop: string = '';
+  perceptionLabelRight: string = '';
+  perceptionLabelBottom: string = '';
+  perceptionLabelLeft: string = '';
 
-  // Emotion grid properties
-  selectedEmotion: EmotionState | null = null;
+  // Perception grid properties
+  selectedPerception: PerceptionState | null = null;
   private configSubscription?: Subscription;
 
   /**
-   * Handle JSON emotion pasted from interviewee (from Emotion Lookup page)
-   * Expected format: {"x": number, "y": number, "text": string}
+   * Handle JSON perception coordinates pasted from interviewee (from Perception Lookup page)
+   * Expected format: {"x": number, "y": number}
    */
-  emotionPasteError: string | null = null;
+  perceptionPasteError: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -156,7 +156,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       transportType: ['', Validators.required],
       placeLabel: ['', Validators.required],
       comments: [''],
-      emotion: [null]
+      perception: [null]
     });
 
     // Subscribe to form changes for real-time validation
@@ -192,7 +192,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             activityType: place.activityType,
             transportType: place.transportType,
             comments: place.comments,
-            emotion: place.emotion || null
+            perception: place.perception || null
           });
 
           // Set up markers after form is initialized
@@ -217,12 +217,12 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           });
 
-          if (place.emotion) {
+          if (place.perception) {
             // Ensure text property exists for backward compatibility
-            this.selectedEmotion = {
-              x: place.emotion.x,
-              y: place.emotion.y,
-              text: place.emotion.text || this.getEmotionText((place.emotion.x + 1) / 2, (place.emotion.y + 1) / 2)
+            this.selectedPerception = {
+              x: place.perception.x,
+              y: place.perception.y,
+              text: place.perception.text || this.getPerceptionText((place.perception.x + 1) / 2, (place.perception.y + 1) / 2)
             };
           }
         }
@@ -240,18 +240,18 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.activityTypes = config.configuration.activityTypes;
         this.transportTypes = config.configuration.transportTypes;
 
-        const el = config.configuration.emotionLabels;
-        this.emotionLabelTop = el?.top?.trim?.() || '';
-        this.emotionLabelRight = el?.right?.trim?.() || '';
-        this.emotionLabelBottom = el?.bottom?.trim?.() || '';
-        this.emotionLabelLeft = el?.left?.trim?.() || '';
+        const el = config.configuration.perceptionLabels;
+        this.perceptionLabelTop = el?.top?.trim?.() || '';
+        this.perceptionLabelRight = el?.right?.trim?.() || '';
+        this.perceptionLabelBottom = el?.bottom?.trim?.() || '';
+        this.perceptionLabelLeft = el?.left?.trim?.() || '';
       } else {
         this.activityTypes = [];
         this.transportTypes = [];
-        this.emotionLabelTop = '';
-        this.emotionLabelRight = '';
-        this.emotionLabelBottom = '';
-        this.emotionLabelLeft = '';
+        this.perceptionLabelTop = '';
+        this.perceptionLabelRight = '';
+        this.perceptionLabelBottom = '';
+        this.perceptionLabelLeft = '';
       }
     });
   }
@@ -643,7 +643,7 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         
         const placeWithGeoData = {
           ...formData,
-          emotion: formData.emotion || undefined,
+          perception: formData.perception || undefined,
           geoId: this.currentGeoId || undefined,
           geoVisualization,
           geoValues
@@ -710,20 +710,20 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Emotion grid callback from shared component
-  onEmotionGridChange(value: EmotionGridValue): void {
-    // Keep local selectedEmotion in sync for backwards compatibility
-    this.selectedEmotion = {
+  // Perception grid callback from shared component
+  onPerceptionGridChange(value: PerceptionGridValue): void {
+    // Keep local selectedPerception in sync for backwards compatibility
+    this.selectedPerception = {
       x: value.x,
       y: value.y,
       text: value.text
     };
-    // Store emotion on the form so summary / persistence keep working
-    this.placeForm.patchValue({ emotion: this.selectedEmotion });
+    // Store perception on the form so summary / persistence keep working
+    this.placeForm.patchValue({ perception: this.selectedPerception });
   }
 
-  onEmotionPaste(raw: string): void {
-    this.emotionPasteError = null;
+  onPerceptionPaste(raw: string): void {
+    this.perceptionPasteError = null;
     const trimmed = (raw || '').trim();
     if (!trimmed) {
       return;
@@ -743,19 +743,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       const x = Math.max(-1, Math.min(1, parsed.x));
       const y = Math.max(-1, Math.min(1, parsed.y));
 
-      // Use provided text if present, otherwise derive from coordinates
-      const text =
-        typeof parsed.text === 'string' && parsed.text.trim().length > 0
-          ? parsed.text.trim()
-          : this.getEmotionText((x + 1) / 2, (y + 1) / 2);
+      // Derive perception text from coordinates
+      const text = this.getPerceptionText((x + 1) / 2, (y + 1) / 2);
 
-      const emotion: EmotionState = { x, y, text };
-      this.selectedEmotion = emotion;
-      this.placeForm.patchValue({ emotion });
+      const perception: PerceptionState = { x, y, text };
+      this.selectedPerception = perception;
+      this.placeForm.patchValue({ perception });
     } catch (err) {
-      console.error('Failed to parse pasted emotion JSON:', err);
-      this.emotionPasteError =
-        'Invalid emotion JSON. Expected format: {"x":0.13,"y":-0.62}';
+      console.error('Failed to parse pasted perception JSON:', err);
+      this.perceptionPasteError =
+        'Invalid perception JSON. Expected format: {"x":0.13,"y":-0.62}';
     }
   }
 
@@ -1017,12 +1014,12 @@ emotions) was not good for 14 or more days during the past 30 days.`
     this.fitMapToMarkers();
   }
 
-  private getEmotionText(x: number, y: number): string {
+  private getPerceptionText(x: number, y: number): string {
     // Use configured axis labels with sensible fallbacks
-    const leftLabel = (this.emotionLabelLeft || 'Dissatisfied').trim();
-    const rightLabel = (this.emotionLabelRight || 'Satisfied').trim();
-    const topLabel = (this.emotionLabelTop || 'Calm').trim();
-    const bottomLabel = (this.emotionLabelBottom || 'Stressed').trim();
+    const leftLabel = (this.perceptionLabelLeft || 'Dissatisfied').trim();
+    const rightLabel = (this.perceptionLabelRight || 'Satisfied').trim();
+    const topLabel = (this.perceptionLabelTop || 'Calm').trim();
+    const bottomLabel = (this.perceptionLabelBottom || 'Stressed').trim();
 
     const describeAxis = (p: number, minLabel: string, maxLabel: string): { text: string; neutral: boolean } => {
       // Neutral band around center

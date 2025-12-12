@@ -1,4 +1,4 @@
-<div class="emotion-lookup-container">
+<div class="perception-lookup-container">
   <!-- Header -->
   <div class="header">
     <div class="header-left">
@@ -18,15 +18,15 @@
       <div class="summary-section">
         <h2 class="section-title">Selected Perception</h2>
 
-        <div class="summary-card" *ngIf="selectedEmotion">
+        <div class="summary-card" *ngIf="selectedPerception">
           <div class="summary-text">
-            {{ selectedEmotion.text }}
+            {{ selectedPerception.text }}
           </div>
           <div class="coordinates-info">
             <span class="coordinates-label">Coordinates</span>
             <span class="coordinates-value">
-              x: {{ selectedEmotion.x | number:'1.2-2' }},
-              y: {{ selectedEmotion.y | number:'1.2-2' }}
+              x: {{ selectedPerception.x | number:'1.2-2' }},
+              y: {{ selectedPerception.y | number:'1.2-2' }}
             </span>
           </div>
           <p class="helper-text">
@@ -34,7 +34,7 @@
           </p>
         </div>
 
-        <div class="no-selection" *ngIf="!selectedEmotion">
+        <div class="no-selection" *ngIf="!selectedPerception">
           Click or drag on the grid to select how this place feels.
         </div>
 
@@ -42,8 +42,8 @@
           <button
             type="button"
             class="btn btn-primary"
-            (click)="copyEmotion()"
-            [disabled]="!selectedEmotion"
+            (click)="copyPerception()"
+            [disabled]="!selectedPerception"
           >
             Copy Perception Coordinates
           </button>
@@ -59,20 +59,19 @@
       </div>
     </div>
 
-    <!-- Right Panel: Emotion grid -->
+    <!-- Right Panel: Perception grid -->
     <div class="right-panel">
-      <div class="emotion-grid-wrapper">
-        <app-emotion-grid
-          [topLabel]="emotionLabelTop || 'Calm'"
-          [rightLabel]="emotionLabelRight || 'Satisfied'"
-          [bottomLabel]="emotionLabelBottom || 'Stressed'"
-          [leftLabel]="emotionLabelLeft || 'Dissatisfied'"
-          [value]="selectedEmotion"
-          (valueChange)="onEmotionChange($event)"
-        ></app-emotion-grid>
+      <div class="perception-grid-wrapper">
+        <app-perception-grid
+          [topLabel]="perceptionLabelTop || 'Calm'"
+          [rightLabel]="perceptionLabelRight || 'Satisfied'"
+          [bottomLabel]="perceptionLabelBottom || 'Stressed'"
+          [leftLabel]="perceptionLabelLeft || 'Dissatisfied'"
+          [value]="selectedPerception"
+          (valueChange)="onPerceptionChange($event)"
+        ></app-perception-grid>
       </div>
     </div>
   </div>
 </div>
-
 

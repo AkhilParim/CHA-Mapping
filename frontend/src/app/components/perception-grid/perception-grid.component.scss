@@ -6,7 +6,7 @@
   height: 100%;
 }
 
-.emotion-grid {
+.perception-grid {
   position: relative;
   width: 100%;
   height: 100%;
@@ -21,7 +21,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.emotion-label {
+.perception-label {
   position: absolute;
   font-size: 14px;
   font-weight: 500;
@@ -95,7 +95,7 @@
   }
 }
 
-.emotion-indicator {
+.perception-indicator {
   position: absolute;
   transform: translate(-50%, -50%);
   z-index: 10;
@@ -105,7 +105,7 @@
   gap: 0.25rem;
 }
 
-.emotion-annotation {
+.perception-annotation {
   position: absolute;
   bottom: 36px;
   left: 50%;
@@ -121,7 +121,7 @@
   user-select: none;
 }
 
-.emotion-dot {
+.perception-dot {
   width: 30px;
   height: 30px;
   background-color: var(--color-accent);

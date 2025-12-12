@@ -1,20 +1,20 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export interface EmotionGridValue {
+export interface PerceptionGridValue {
   x: number; // normalized -1..1
   y: number; // normalized -1..1
   text: string;
 }
 
 @Component({
-  selector: 'app-emotion-grid',
+  selector: 'app-perception-grid',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './emotion-grid.component.html',
-  styleUrl: './emotion-grid.component.scss'
+  templateUrl: './perception-grid.component.html',
+  styleUrl: './perception-grid.component.scss'
 })
-export class EmotionGridComponent implements OnChanges {
+export class PerceptionGridComponent implements OnChanges {
   @ViewChild('grid') grid!: ElementRef<HTMLDivElement>;
 
   @Input() topLabel = 'Calm';
@@ -22,11 +22,11 @@ export class EmotionGridComponent implements OnChanges {
   @Input() bottomLabel = 'Stressed';
   @Input() leftLabel = 'Dissatisfied';
 
-  @Input() value: EmotionGridValue | null = null;
-  @Output() valueChange = new EventEmitter<EmotionGridValue>();
+  @Input() value: PerceptionGridValue | null = null;
+  @Output() valueChange = new EventEmitter<PerceptionGridValue>();
 
   // Start neutral so Angular never sees a null → object flip during first check
-  selectedEmotion: EmotionGridValue = {
+  selectedPerception: PerceptionGridValue = {
     x: 0,
     y: 0,
     text: 'Neutral'
@@ -36,9 +36,9 @@ export class EmotionGridComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['value']) {
       if (this.value) {
-        this.selectedEmotion = { ...this.value };
+        this.selectedPerception = { ...this.value };
       } else {
-        this.selectedEmotion = {
+        this.selectedPerception = {
           x: 0,
           y: 0,
           text: 'Neutral'
@@ -86,17 +86,17 @@ export class EmotionGridComponent implements OnChanges {
     const yPercent = y / rect.height;
     const normalized = this.pixelToNormalized(x, y, rect);
 
-    this.selectedEmotion = {
+    this.selectedPerception = {
       x: normalized.x,
       y: normalized.y,
-      text: this.getEmotionText(xPercent, yPercent)
+      text: this.getPerceptionText(xPercent, yPercent)
     };
     this.emitCurrent();
   }
 
   private emitCurrent(): void {
-    if (!this.selectedEmotion) return;
-    this.valueChange.emit({ ...this.selectedEmotion });
+    if (!this.selectedPerception) return;
+    this.valueChange.emit({ ...this.selectedPerception });
   }
 
   private pixelToNormalized(pixelX: number, pixelY: number, rect: DOMRect): { x: number; y: number } {
@@ -116,12 +116,12 @@ export class EmotionGridComponent implements OnChanges {
   }
 
   getDisplayCoordinates(): { x: number; y: number } | null {
-    if (!this.selectedEmotion || !this.grid) return null;
+    if (!this.selectedPerception || !this.grid) return null;
     const rect = this.grid.nativeElement.getBoundingClientRect();
-    return this.normalizedToPixel(this.selectedEmotion.x, this.selectedEmotion.y, rect);
+    return this.normalizedToPixel(this.selectedPerception.x, this.selectedPerception.y, rect);
   }
 
-  private getEmotionText(x: number, y: number): string {
+  private getPerceptionText(x: number, y: number): string {
     const leftLabel = (this.leftLabel || 'Dissatisfied').trim();
     const rightLabel = (this.rightLabel || 'Satisfied').trim();
     const topLabel = (this.topLabel || 'Calm').trim();

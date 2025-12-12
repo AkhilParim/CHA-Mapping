@@ -761,14 +761,14 @@ form {
             border: 1px solid #fca5a5;
         }
 
-        .emotion-section {
+        .perception-section {
             flex: 1;
             margin-bottom: 24px;
             display: flex;
             flex-direction: column;
             gap: 12px;
 
-            .emotion-import {
+            .perception-import {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
@@ -779,11 +779,11 @@ form {
                     color: var(--color-text-secondary);
                 }
 
-                .emotion-paste-row {
+                .perception-paste-row {
                     display: flex;
                     gap: 8px;
 
-                    .emotion-paste-input {
+                    .perception-paste-input {
                         flex: 1;
                         padding: 6px 10px;
                         font-size: 12px;
@@ -800,7 +800,7 @@ form {
                         }
                     }
 
-                    .emotion-paste-btn {
+                    .perception-paste-btn {
                         padding: 6px 12px;
                         border-radius: 6px;
                         border: none;
@@ -831,7 +831,7 @@ form {
                 }
             }
 
-            .emotion-grid {
+            .perception-grid {
                 flex: 1;
             }
         }

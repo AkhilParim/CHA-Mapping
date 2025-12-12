@@ -87,13 +87,13 @@
                 </div>
 
                 <div class="detail-row full-width">
-                  <div class="detail-item" *ngIf="place.emotion">
+                  <div class="detail-item" *ngIf="place.perception">
                     <span class="detail-label">Feeling:</span>
-                    <span class="detail-value">{{place.emotion.text}}</span>
+                    <span class="detail-value">{{place.perception.text}}</span>
                   </div>
                 </div>
 
-                <!-- Emotion and Comments -->
+                <!-- Perception and Comments -->
                 <div class="detail-row full-width" *ngIf="place.comments">
                   <div class="detail-item">
                     <span class="detail-label">Comments:</span>

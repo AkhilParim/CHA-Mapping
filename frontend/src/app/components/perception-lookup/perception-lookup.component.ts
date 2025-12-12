@@ -3,24 +3,24 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ConfigurationService } from '../../services/configuration.service';
 import { Subscription } from 'rxjs';
-import { EmotionGridComponent, EmotionGridValue } from '../emotion-grid/emotion-grid.component';
+import { PerceptionGridComponent, PerceptionGridValue } from '../perception-grid/perception-grid.component';
 
 @Component({
-  selector: 'app-emotion-lookup',
+  selector: 'app-perception-lookup',
   standalone: true,
-  imports: [CommonModule, EmotionGridComponent],
+  imports: [CommonModule, PerceptionGridComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  templateUrl: './emotion-lookup.component.html',
-  styleUrl: './emotion-lookup.component.scss'
+  templateUrl: './perception-lookup.component.html',
+  styleUrl: './perception-lookup.component.scss'
 })
-export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Emotion labels from configuration
-  emotionLabelTop = '';
-  emotionLabelRight = '';
-  emotionLabelBottom = '';
-  emotionLabelLeft = '';
+export class PerceptionLookupComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Perception labels from configuration
+  perceptionLabelTop = '';
+  perceptionLabelRight = '';
+  perceptionLabelBottom = '';
+  perceptionLabelLeft = '';
 
-  selectedEmotion: EmotionGridValue | null = null;
+  selectedPerception: PerceptionGridValue | null = null;
 
   copySuccess = false;
   copyError = false;
@@ -35,21 +35,21 @@ export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnInit(): void {
     this.configSubscription = this.configurationService.configuration$.subscribe(config => {
       if (config) {
-        const el = config.configuration.emotionLabels;
-        this.emotionLabelTop = el?.top?.trim?.() || '';
-        this.emotionLabelRight = el?.right?.trim?.() || '';
-        this.emotionLabelBottom = el?.bottom?.trim?.() || '';
-        this.emotionLabelLeft = el?.left?.trim?.() || '';
+        const el = config.configuration.perceptionLabels;
+        this.perceptionLabelTop = el?.top?.trim?.() || '';
+        this.perceptionLabelRight = el?.right?.trim?.() || '';
+        this.perceptionLabelBottom = el?.bottom?.trim?.() || '';
+        this.perceptionLabelLeft = el?.left?.trim?.() || '';
       } else {
-        this.emotionLabelTop = '';
-        this.emotionLabelRight = '';
-        this.emotionLabelBottom = '';
-        this.emotionLabelLeft = '';
+        this.perceptionLabelTop = '';
+        this.perceptionLabelRight = '';
+        this.perceptionLabelBottom = '';
+        this.perceptionLabelLeft = '';
       }
 
-      // Initialize default emotion after labels are known
-      if (!this.selectedEmotion) {
-        this.selectedEmotion = {
+      // Initialize default perception after labels are known
+      if (!this.selectedPerception) {
+        this.selectedPerception = {
           x: 0,
           y: 0,
           text: 'Neutral'
@@ -59,9 +59,9 @@ export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngAfterViewInit(): void {
-    // Ensure we have a default emotion if config arrives late
-    if (!this.selectedEmotion) {
-      this.selectedEmotion = {
+    // Ensure we have a default perception if config arrives late
+    if (!this.selectedPerception) {
+      this.selectedPerception = {
         x: 0,
         y: 0,
         text: 'Neutral'
@@ -81,21 +81,21 @@ export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   // valueChange from grid
-  onEmotionChange(value: EmotionGridValue): void {
-    this.selectedEmotion = value;
+  onPerceptionChange(value: PerceptionGridValue): void {
+    this.selectedPerception = value;
   }
 
   // Clipboard handling
-  async copyEmotion(): Promise<void> {
-    if (!this.selectedEmotion) return;
+  async copyPerception(): Promise<void> {
+    if (!this.selectedPerception) return;
 
     this.copySuccess = false;
     this.copyError = false;
 
     // Copy only normalized coordinates; facilitator will compute text client-side
     const payload = {
-      x: this.selectedEmotion.x,
-      y: this.selectedEmotion.y
+      x: this.selectedPerception.x,
+      y: this.selectedPerception.y
     };
     const textToCopy = JSON.stringify(payload);
 
@@ -120,7 +120,7 @@ export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       }
     } catch (error) {
-      console.error('Failed to copy emotion:', error);
+      console.error('Failed to copy perception:', error);
       this.copyError = true;
     }
 
@@ -130,5 +130,4 @@ export class EmotionLookupComponent implements OnInit, AfterViewInit, OnDestroy 
     }, 3000);
   }
 }
-
 

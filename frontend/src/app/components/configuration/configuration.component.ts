@@ -55,7 +55,7 @@ export class ConfigurationComponent implements OnInit {
       if (cfg?.configuration) {
         const activities = cfg.configuration.activityTypes?.join(', ') || '';
         const transports = cfg.configuration.transportTypes?.join(', ') || '';
-        const el = cfg.configuration.emotionLabels || { top: '', right: '', bottom: '', left: '' };
+        const el = cfg.configuration.perceptionLabels || { top: '', right: '', bottom: '', left: '' };
         this.configForm.patchValue({ 
           activityCsv: activities, 
           transportCsv: transports,
@@ -98,7 +98,7 @@ export class ConfigurationComponent implements OnInit {
     const activityTypes = activityCsv.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const transportTypes = transportCsv.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-    const emotionLabels = {
+    const perceptionLabels = {
       top: String(this.configForm.value.labelTop || '').trim(),
       right: String(this.configForm.value.labelRight || '').trim(),
       bottom: String(this.configForm.value.labelBottom || '').trim(),
@@ -117,14 +117,14 @@ export class ConfigurationComponent implements OnInit {
             ...this.currentConfig.configuration,
             activityTypes,
             transportTypes,
-            emotionLabels
+            perceptionLabels
           }
         }
       : {
           configuration: {
             activityTypes,
             transportTypes,
-            emotionLabels
+            perceptionLabels
           }
         } as AppConfiguration;
 
@@ -277,15 +277,15 @@ export class ConfigurationComponent implements OnInit {
     // Hardcoded defaults
     const defaultActivities = ['Home', 'Healthcare', 'Pharmacy', 'Grocery', 'Wellness', 'Other'];
     const defaultTransports = ['Walk', 'Bicycle', 'Drove Myself', 'Driven by Someone Else', 'Bus', 'Train', 'Other'];
-    const defaultEmotionLabels = { top: 'Calm', right: 'Satisfied', bottom: 'Stressed', left: 'Dissatisfied' };
+    const defaultPerceptionLabels = { top: 'Calm', right: 'Satisfied', bottom: 'Stressed', left: 'Dissatisfied' };
 
     this.configForm.patchValue({
       activityCsv: defaultActivities.join(', '),
       transportCsv: defaultTransports.join(', '),
-      labelTop: defaultEmotionLabels.top,
-      labelRight: defaultEmotionLabels.right,
-      labelBottom: defaultEmotionLabels.bottom,
-      labelLeft: defaultEmotionLabels.left
+      labelTop: defaultPerceptionLabels.top,
+      labelRight: defaultPerceptionLabels.right,
+      labelBottom: defaultPerceptionLabels.bottom,
+      labelLeft: defaultPerceptionLabels.left
     });
 
     this.configForm.markAsDirty();

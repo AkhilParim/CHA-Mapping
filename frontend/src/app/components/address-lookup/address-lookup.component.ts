@@ -50,8 +50,8 @@ export class AddressLookupComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   // Navigation
-  goToEmotionLookup(): void {
-    this.router.navigate(['/emotion-lookup']);
+  goToPerceptionLookup(): void {
+    this.router.navigate(['/perception-lookup']);
   }
 
   initializeMap(): void {

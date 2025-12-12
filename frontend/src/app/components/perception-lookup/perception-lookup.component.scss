@@ -1,6 +1,6 @@
 @import '../../../styles/_tokens';
 
-.emotion-lookup-container {
+.perception-lookup-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -214,7 +214,7 @@
   }
 }
 
-.emotion-grid-wrapper {
+.perception-grid-wrapper {
   flex: 1;
   display: flex;
   align-items: stretch;
@@ -274,9 +274,8 @@
     padding: 1.5rem 1.25rem;
   }
 
-  .emotion-grid-wrapper {
+  .perception-grid-wrapper {
     padding: 1.5rem;
   }
 }
-
 

@@ -135,7 +135,7 @@ API endpoints
 - GET `/configuration`
   - Returns the application configuration document.
 - POST `/configuration`
-  - Upserts configuration: `{ configuration: { activityTypes: string[], transportTypes: string[], emotionLabels? } }`.
+  - Upserts configuration: `{ configuration: { activityTypes: string[], transportTypes: string[], perceptionLabels? } }`.
 - GET `/theme`
   - Returns `{ theme: Record<string,string>, lastUpdated: string|null }`.
 - POST `/theme`

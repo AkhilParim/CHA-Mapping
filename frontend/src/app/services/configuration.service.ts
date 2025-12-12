@@ -11,7 +11,7 @@ export interface AppConfiguration {
   configuration: {
     activityTypes: string[];
     transportTypes: string[];
-    emotionLabels?: {
+    perceptionLabels?: {
       top: string;
       right: string;
       bottom: string;
