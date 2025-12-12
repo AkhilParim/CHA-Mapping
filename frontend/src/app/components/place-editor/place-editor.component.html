@@ -288,6 +288,7 @@
                           class="perception-paste-input"
                            placeholder='Perception coordinates'
                           autocomplete="off"
+                          (keydown.enter)="$event.preventDefault(); onPerceptionPaste(perceptionPasteInput.value)"
                         #perceptionPasteInput
                         />
                         <button

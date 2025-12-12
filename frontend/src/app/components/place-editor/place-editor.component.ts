@@ -13,6 +13,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { PlacesService } from '../../services/places.service';
 import { GeojsonService } from '../../services/geojson.service';
 import { ConfigurationService } from '../../services/configuration.service';
+import { PerceptionService } from '../../services/perception.service';
 import { HttpClientModule } from '@angular/common/http';
 import { Collection } from '../../services/geojson.service';
 import { PerceptionGridComponent, PerceptionGridValue } from '../perception-grid/perception-grid.component';
@@ -132,7 +133,8 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     private placesService: PlacesService,
     private dialog: MatDialog,
     public geojsonService: GeojsonService,
-    public configurationService: ConfigurationService
+    public configurationService: ConfigurationService,
+    private perceptionService: PerceptionService
   ) {
     this.initializeForm();
   }
@@ -222,7 +224,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             this.selectedPerception = {
               x: place.perception.x,
               y: place.perception.y,
-              text: place.perception.text || this.getPerceptionText((place.perception.x + 1) / 2, (place.perception.y + 1) / 2)
+              text: place.perception.text || this.perceptionService.getPerceptionText(
+                (place.perception.x + 1) / 2,
+                (place.perception.y + 1) / 2,
+                {
+                  top: this.perceptionLabelTop,
+                  right: this.perceptionLabelRight,
+                  bottom: this.perceptionLabelBottom,
+                  left: this.perceptionLabelLeft
+                }
+              )
             };
           }
         }
@@ -744,7 +755,16 @@ export class PlaceEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       const y = Math.max(-1, Math.min(1, parsed.y));
 
       // Derive perception text from coordinates
-      const text = this.getPerceptionText((x + 1) / 2, (y + 1) / 2);
+      const text = this.perceptionService.getPerceptionText(
+        (x + 1) / 2,
+        (y + 1) / 2,
+        {
+          top: this.perceptionLabelTop,
+          right: this.perceptionLabelRight,
+          bottom: this.perceptionLabelBottom,
+          left: this.perceptionLabelLeft
+        }
+      );
 
       const perception: PerceptionState = { x, y, text };
       this.selectedPerception = perception;
@@ -1012,38 +1032,5 @@ emotions) was not good for 14 or more days during the past 30 days.`
     }
     
     this.fitMapToMarkers();
-  }
-
-  private getPerceptionText(x: number, y: number): string {
-    // Use configured axis labels with sensible fallbacks
-    const leftLabel = (this.perceptionLabelLeft || 'Dissatisfied').trim();
-    const rightLabel = (this.perceptionLabelRight || 'Satisfied').trim();
-    const topLabel = (this.perceptionLabelTop || 'Calm').trim();
-    const bottomLabel = (this.perceptionLabelBottom || 'Stressed').trim();
-
-    const describeAxis = (p: number, minLabel: string, maxLabel: string): { text: string; neutral: boolean } => {
-      // Neutral band around center
-      const neutralBand = 0.1; // 10% from center counted as Neutral
-      const dist = Math.abs(p - 0.5);
-      if (dist <= neutralBand) return { text: 'Neutral', neutral: true };
-
-      // Normalize remaining range to 0..1 then map to 20..100 in pentiles
-      const normalized = Math.min(1, Math.max(0, (dist - neutralBand) / (0.5 - neutralBand)));
-      const bucket = Math.max(1, Math.min(5, Math.ceil(normalized * 5)));
-      const pct = bucket * 20; // 20,40,60,80,100
-
-      return { text: p < 0.5 ? `${pct}% ${minLabel}` : `${pct}% ${maxLabel}`, neutral: false };
-    };
-
-    const xRes = describeAxis(x, leftLabel, rightLabel);
-    const yRes = describeAxis(y, topLabel, bottomLabel);
-
-    if (xRes.neutral && yRes.neutral) {
-      return 'Neutral';
-    }
-
-    const xText = xRes.neutral ? `Neutral (${leftLabel}–${rightLabel})` : xRes.text;
-    const yText = yRes.neutral ? `Neutral (${topLabel}–${bottomLabel})` : yRes.text;
-    return `${xText} and ${yText}`;
   }
 }

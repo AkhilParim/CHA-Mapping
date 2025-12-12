@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PerceptionService } from '../../services/perception.service';
 
 export interface PerceptionGridValue {
   x: number; // normalized -1..1
@@ -15,6 +16,7 @@ export interface PerceptionGridValue {
   styleUrl: './perception-grid.component.scss'
 })
 export class PerceptionGridComponent implements OnChanges {
+  constructor(private perceptionService: PerceptionService) {}
   @ViewChild('grid') grid!: ElementRef<HTMLDivElement>;
 
   @Input() topLabel = 'Calm';
@@ -89,7 +91,12 @@ export class PerceptionGridComponent implements OnChanges {
     this.selectedPerception = {
       x: normalized.x,
       y: normalized.y,
-      text: this.getPerceptionText(xPercent, yPercent)
+      text: this.perceptionService.getPerceptionText(xPercent, yPercent, {
+        top: this.topLabel,
+        right: this.rightLabel,
+        bottom: this.bottomLabel,
+        left: this.leftLabel
+      })
     };
     this.emitCurrent();
   }
@@ -119,36 +126,6 @@ export class PerceptionGridComponent implements OnChanges {
     if (!this.selectedPerception || !this.grid) return null;
     const rect = this.grid.nativeElement.getBoundingClientRect();
     return this.normalizedToPixel(this.selectedPerception.x, this.selectedPerception.y, rect);
-  }
-
-  private getPerceptionText(x: number, y: number): string {
-    const leftLabel = (this.leftLabel || 'Dissatisfied').trim();
-    const rightLabel = (this.rightLabel || 'Satisfied').trim();
-    const topLabel = (this.topLabel || 'Calm').trim();
-    const bottomLabel = (this.bottomLabel || 'Stressed').trim();
-
-    const describeAxis = (p: number, minLabel: string, maxLabel: string): { text: string; neutral: boolean } => {
-      const neutralBand = 0.1;
-      const dist = Math.abs(p - 0.5);
-      if (dist <= neutralBand) return { text: 'Neutral', neutral: true };
-
-      const normalized = Math.min(1, Math.max(0, (dist - neutralBand) / (0.5 - neutralBand)));
-      const bucket = Math.max(1, Math.min(5, Math.ceil(normalized * 5)));
-      const pct = bucket * 20;
-
-      return { text: p < 0.5 ? `${pct}% ${minLabel}` : `${pct}% ${maxLabel}`, neutral: false };
-    };
-
-    const xRes = describeAxis(x, leftLabel, rightLabel);
-    const yRes = describeAxis(y, topLabel, bottomLabel);
-
-    if (xRes.neutral && yRes.neutral) {
-      return 'Neutral';
-    }
-
-    const xText = xRes.neutral ? `Neutral (${leftLabel}–${rightLabel})` : xRes.text;
-    const yText = yRes.neutral ? `Neutral (${topLabel}–${bottomLabel})` : yRes.text;
-    return `${xText} and ${yText}`;
   }
 }
 
