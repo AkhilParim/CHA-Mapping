@@ -185,9 +185,3 @@ Troubleshooting
 - Geo layers empty: confirm GeoJSON files exist in `frontend/public/data/` and are reachable.
 - Config not loading: ensure backend is running and MongoDB contains a configuration document (or POST one via the API).
 - Deployed app 404 on refresh: confirm your hosting respects Angular SPA fallback and the `baseHref` `/cha-mapping/`.
-
-
-Other things to add
--------------------
-# All URL links
-# More details on what format our geojson must be, how we fetch the details etc.
