@@ -5,4 +5,6 @@ transform_geojson/data
 
 .DS_Store
 
+.specstory
+.cursorindexingignore
 node_modules
