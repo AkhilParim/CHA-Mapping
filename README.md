@@ -16,6 +16,7 @@ Monorepo structure
   /public               # Static assets (copied to dist)
   /public/data          # GeoJSON files loaded at runtime
 /transform_geojson      # Python scripts for GeoJSON processing
+/analysis               # Statistical analysis Jupyter notebooks
 README.md
 ```
 
@@ -161,6 +162,35 @@ cd transform_geojson
 pip install pyproj tqdm
 python get_IL_places.py
 ```
+
+
+Statistical Analysis
+--------------------
+Location: `analysis/`
+
+Comprehensive Jupyter notebook for analyzing exported journey data.
+
+Features
+- Travel & Mobility Statistics: distance analysis, spatial coverage, outlier detection
+- Temporal Patterns: time-of-day analysis, weekday/weekend patterns, duration insights
+- Interactive visualizations: maps, charts, heatmaps
+- Non-technical user friendly: designed for Google Colab
+
+Quick start
+```bash
+# Open https://colab.research.google.com/
+# Upload CHA_Mapping_Statistics_Analysis.ipynb
+# Follow the prompts to upload your CSV file
+# View generated statistics and visualizations
+```
+
+Input: CSV file(s) exported from the CHA Mapping application (combine multiple exports if needed)
+
+Output:
+- Comprehensive statistics report
+- Distance and spatial analysis
+- Temporal pattern insights
+- Outlier detection
 
 Deployment notes
 ----------------
