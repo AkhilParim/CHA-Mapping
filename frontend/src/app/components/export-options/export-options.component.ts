@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 
-import { Place } from '../../services/places.service';
+import { Place, PlacesService } from '../../services/places.service';
 import { environment } from '../../../environments/environment';
 import { ZipWriter, BlobWriter, TextReader } from '@zip.js/zip.js';
 
@@ -26,7 +26,8 @@ export class ExportOptionsComponent {
 
   constructor(
     private dialogRef: MatDialogRef<ExportOptionsComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: ExportDialogData
+    @Inject(MAT_DIALOG_DATA) public data: ExportDialogData,
+    private placesService: PlacesService
   ) {}
 
   async onCopyOutput(): Promise<void> {
@@ -149,7 +150,10 @@ export class ExportOptionsComponent {
       'Comments',
       'NDI (Neighborhood Deprivation Index)',
       'TES (Tree Equity Score)',
-      'MHLTH (Mental Health Crude Prevalence)'
+      'MHLTH (Mental Health Crude Prevalence)',
+      'Distance From to POI (meters)',
+      'Distance POI to To (meters)',
+      'Total Distance (meters)'
     ];
 
     let csvContent = headers.join(',') + '\n';
@@ -164,6 +168,26 @@ export class ExportOptionsComponent {
         const ndiValue = place.geoValues?.NDI ? place.geoValues.NDI.toString() : '';
         const tesValue = place.geoValues?.tes ? place.geoValues.tes.toString() : '';
         const mhlthValue = place.geoValues?.MHLTH_CrudePrev ? place.geoValues.MHLTH_CrudePrev.toString() : '';
+        
+        // Calculate distances
+        let distanceFromToPoi = '';
+        let distancePoiToTo = '';
+        let totalDistance = '';
+        
+        if (place.fromCoordinates && place.poiCoordinates) {
+          const fromToPoiMeters = this.placesService.calculateDistance(place.fromCoordinates, place.poiCoordinates);
+          distanceFromToPoi = Math.round(fromToPoiMeters).toString();
+        }
+        
+        if (place.poiCoordinates && place.toCoordinates) {
+          const poiToToMeters = this.placesService.calculateDistance(place.poiCoordinates, place.toCoordinates);
+          distancePoiToTo = Math.round(poiToToMeters).toString();
+        }
+        
+        if (distanceFromToPoi && distancePoiToTo) {
+          totalDistance = (parseInt(distanceFromToPoi) + parseInt(distancePoiToTo)).toString();
+        }
+        
         const rowData = [
           date,
           (index + 1).toString(),
@@ -185,7 +209,10 @@ export class ExportOptionsComponent {
           this.escapeCSVField(place.comments || ''),
           ndiValue,
           tesValue,
-          mhlthValue
+          mhlthValue,
+          distanceFromToPoi,
+          distancePoiToTo,
+          totalDistance
         ];
         csvContent += rowData.join(',') + '\n';
       });
