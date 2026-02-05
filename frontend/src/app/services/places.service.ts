@@ -68,7 +68,7 @@ export class PlacesService {
   private readonly STORAGE_KEY = 'cha-mapping-places';
 
   constructor() {
-    this.loadFromLocalStorage();
+    this.loadFromSessionStorage();
     // Set the first available date (when sorted) as the selected date
     const dates = this.getAllDates();
     if (dates.length > 0) {
@@ -76,24 +76,24 @@ export class PlacesService {
     }
   }
 
-  private saveToLocalStorage(): void {
+  private saveToSessionStorage(): void {
     try {
       const placesObject = Object.fromEntries(this.placesMap);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(placesObject));
+      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(placesObject));
     } catch (error) {
-      console.error('Error saving places to localStorage:', error);
+      console.error('Error saving places to sessionStorage:', error);
     }
   }
 
-  private loadFromLocalStorage(): void {
+  private loadFromSessionStorage(): void {
     try {
-      const placesJson = localStorage.getItem(this.STORAGE_KEY);
+      const placesJson = sessionStorage.getItem(this.STORAGE_KEY);
       if (placesJson) {
         const placesObject = JSON.parse(placesJson);
         this.placesMap = new Map(Object.entries(placesObject));
       }
     } catch (error) {
-      console.error('Error loading places from localStorage:', error);
+      console.error('Error loading places from sessionStorage:', error);
     }
   }
 
@@ -108,7 +108,7 @@ export class PlacesService {
   addDate(date: string): void {
     if (!this.placesMap.has(date)) {
       this.placesMap.set(date, []);
-      this.saveToLocalStorage();
+      this.saveToSessionStorage();
     }
   }
 
@@ -121,7 +121,7 @@ export class PlacesService {
     console.log(place);
     
     this.placesMap.set(date, places);
-    this.saveToLocalStorage();
+    this.saveToSessionStorage();
   }
 
   getPlacesByDate(date: string): Place[] {
@@ -149,7 +149,7 @@ export class PlacesService {
           if (!place.placeLabel) place.placeLabel = '';
           places[index] = place;
           this.placesMap.set(oldDate, places);
-          this.saveToLocalStorage();
+          this.saveToSessionStorage();
         }
       }
     }
@@ -167,7 +167,7 @@ export class PlacesService {
         } else {
           this.placesMap.set(date, places);
         }
-        this.saveToLocalStorage();
+        this.saveToSessionStorage();
       }
     }
   }
@@ -175,7 +175,7 @@ export class PlacesService {
   clearAllData(): void {
     this.placesMap.clear();
     this.selectedDateSubject.next(null);
-    localStorage.removeItem(this.STORAGE_KEY);
+    sessionStorage.removeItem(this.STORAGE_KEY);
   }
 
   private generateId(): string {
