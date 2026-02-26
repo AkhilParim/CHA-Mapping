@@ -1,6 +1,9 @@
 CHA Mapping
 ===========
 
+A web application for community health assessment (CHA) journey planning, place editing, geo-insight overlays, and address lookup — built as an Angular 18 SPA backed by a small Express/MongoDB API.
+
+
 Overview
 --------
 - Frontend: Angular 18 SPA with Mapbox GL, local persistence, and export flows.
@@ -16,14 +19,54 @@ Monorepo structure
   /public               # Static assets (copied to dist)
   /public/data          # GeoJSON files loaded at runtime
 /transform_geojson      # Python scripts for GeoJSON processing
+.env.example            # Template for required environment variables
 README.md
 ```
+
+
+Prerequisites
+-------------
+Make sure the following are installed before getting started:
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | 18 or later | https://nodejs.org |
+| npm | 9 or later | bundled with Node |
+| Angular CLI | 18 | `npm install -g @angular/cli@18` |
+| MongoDB | 6 or later | https://www.mongodb.com/try/download/community |
+| Python | 3.8+ | only needed for data transform scripts |
+| Mapbox account | — | free tier works; token required at build time |
+
+
+Environment setup
+-----------------
+Both the frontend build and the backend server read configuration from a `.env` file
+in the repository root.
+
+1. Copy the example file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Fill in the values (see descriptions below):
+   ```
+   MAPBOX_TOKEN=<your Mapbox public access token>
+   FACILITATOR_ZIP_PASSWORD=<password used when exporting encrypted ZIP files>
+   DB_END_POINT_2=<MongoDB connection string used in production>
+   ```
+
+Getting a Mapbox token
+- Sign up at https://account.mapbox.com/auth/signup/
+- In your account dashboard go to "Access tokens" and create a public token.
+- The token must have scopes for Mapbox GL JS and the Search/Geocoding APIs.
+
+The `.env` file is listed in `.gitignore` and must never be committed.
 
 
 Key features
 ------------
 - Address lookup with Mapbox Search, click-to-drop markers, reverse geocoding, clipboard copy.
-- Journey planning with date-based organization and proximity-based grouping (100m) using Haversine distance.
+- Journey planning with date-based organization and proximity-based grouping (100 m) using Haversine distance.
 - Geo insight overlays: point-in-polygon lookup and tertile calculations for NDI, TES, and Mental Health prevalence.
 - Runtime theming via CSS variables applied from backend-stored theme tokens.
 
@@ -31,31 +74,20 @@ Key features
 Architecture
 ------------
 - Frontend (Angular 18, standalone components)
-  - Routes: `/journey-planner` (default), `/place-editor`, `/configuration`, `/address-lookup`.
+  - Routes: `/journey-planner` (default), `/place-editor`, `/configuration`, `/address-lookup`, `/perception-lookup`.
   - Services: configuration/theme API, GeoJSON loader with Turf.js, localStorage-based places service.
   - Static GeoJSON loaded from `frontend/public/data/...`.
 - Backend (Node/Express + MongoDB)
   - Endpoints for application configuration and theme tokens.
   - Uses database `PlaceEditor` with collections `app_configuration` and `theme_configuration`.
 - Data processing
-  - Python script to filter Illinois features from national GeoJSON.
+  - Python script to filter Illinois features from a national GeoJSON.
 
 
 Frontend
 --------
 Tech
 - Angular 18, Angular Material/CDK, Mapbox GL (`mapbox-gl`), Mapbox Search Web Component, Turf.js, RxJS.
-
-Important configuration
-- Base href for build: `/cha-mapping/` (see `frontend/angular.json`).
-- Assets copied from `frontend/public/` into the build output (`dist`).
-- Runtime environments:
-  - Dev: `frontend/src/environments/environment.ts` → `apiUrl: http://localhost:3050`
-  - Prod: `frontend/src/environments/environment.production.ts` → `apiUrl: http://ip-address/placeEditor`
-
-Environment variables (consumed at build/runtime)
-- `MAPBOX_TOKEN` (required): Mapbox access token used by Mapbox GL and Search.
-- `FACILITATOR_ZIP_PASSWORD` (optional): used by export flows if applicable.
 
 Install & run
 ```bash
@@ -67,10 +99,22 @@ npm start
 
 Build
 ```bash
+# Served at the root path (default, works for most deployments):
 cd frontend
 npm run build
-# Output: frontend/dist (served with baseHref /cha-mapping/)
+# Output: frontend/dist
+
+# Served under a subpath (e.g. /cha-mapping/):
+npm run build:subpath
+# Equivalent to: ng build --base-href /cha-mapping/
+
+# Any custom subpath:
+ng build --base-href /your-subpath/
 ```
+
+> **Note:** If you deploy the frontend under a subpath, your web server must
+> also serve the Angular SPA fallback (rewrite all unmatched routes to
+> `index.html`) for deep-link navigation to work.
 
 Lint & test
 ```bash
@@ -79,11 +123,22 @@ npm run lint
 npm test
 ```
 
+Environment variables (consumed at build time via custom webpack config)
+- `MAPBOX_TOKEN` (required): Mapbox access token used by Mapbox GL and Search.
+- `FACILITATOR_ZIP_PASSWORD` (optional): password used by the encrypted export flow.
+
+Runtime environments
+- Dev:  `frontend/src/environments/environment.ts`            → `apiUrl: http://localhost:3050`
+- Prod: `frontend/src/environments/environment.production.ts` → `apiUrl: http://<your-server-url>/placeEditor`
+
+Update `environment.production.ts` with your own API URL before building for production.
+
 Routes (`src/app/app.routes.ts`)
-- ``/journey-planner`` (default redirect)
-- ``/place-editor``
-- ``/configuration``
-- ``/address-lookup``
+- `/journey-planner`  (default redirect)
+- `/place-editor`
+- `/configuration`
+- `/address-lookup`
+- `/perception-lookup`
 
 Core services
 - `ConfigurationService`
@@ -97,7 +152,7 @@ Core services
   - Provides point-in-polygon lookups and tertile calculations for indicators.
 - `PlacesService`
   - Manages places grouped by date.
-  - Persists to localStorage under key `cha-mapping-places`.
+  - Persists to sessionStorage under key `cha-mapping-places`.
   - Proximity grouping within 100 meters using Haversine distance.
 
 Address lookup (`address-lookup` component)
@@ -111,25 +166,26 @@ Backend
 Tech
 - Node 18+, Express 4, MongoDB Node Driver 6, CORS, dotenv.
 
+Install & run
+```bash
+cd backend
+npm install
+npm run dev   # nodemon (auto-reload)
+# or: npm start
+# Requires MongoDB at 127.0.0.1:27017
+```
+
 Server
 - Port: `3050`
 - Database: `PlaceEditor`
 - Collections: `app_configuration`, `theme_configuration`
 - DB endpoint:
-  - Dev: `mongodb://127.0.0.1:27017/PlaceEditor`
-  - Prod: `process.env.DB_END_POINT_2` when `NODE_ENV=production`
-
-Install & run
-```bash
-cd backend
-npm install
-npm run dev   # or: npm start
-# Requires MongoDB at 127.0.0.1:27017 or set DB_END_POINT_2 on the server with NODE_ENV=production
-```
+  - Dev: `mongodb://127.0.0.1:27017/PlaceEditor` (hardcoded default)
+  - Prod: value of `DB_END_POINT_2` env var when `NODE_ENV=production`
 
 Environment variables
-- `NODE_ENV` (`production` to use `DB_END_POINT_2`)
-- `DB_END_POINT_2` (MongoDB connection string for production)
+- `NODE_ENV`      — set to `production` to switch to the `DB_END_POINT_2` connection string
+- `DB_END_POINT_2` — full MongoDB connection string for production (e.g. `mongodb+srv://user:pass@cluster/PlaceEditor`)
 
 API endpoints
 - GET `/configuration`
@@ -151,28 +207,38 @@ Data processing scripts
 -----------------------
 Location: `transform_geojson/`
 
-Ex: `get_IL_places.py`
-- Filters Illinois features (`stabbr == 'IL'`) from `data/input/NDI_202_Trt_AllStates.geojson` and writes `data/output/NDI_202_Trt_IL_only_wgs84.geojson`.
-- The geojson file must be in WGS84 format. transform_geojson converts the file to WGS84.
-
-Run
+Install Python dependencies
 ```bash
 cd transform_geojson
 pip install pyproj tqdm
+```
+
+`get_IL_places.py`
+- Reads `data/input/NDI_202_Trt_AllStates.geojson` (national GeoJSON, any CRS).
+- Filters features where `stabbr == 'IL'` and reprojects to WGS 84.
+- Writes `data/output/NDI_202_Trt_IL_only_wgs84.geojson`.
+
+```bash
+cd transform_geojson
 python get_IL_places.py
 ```
 
+
 Deployment notes
 ----------------
-- Frontend `baseHref` is `/cha-mapping/` (important for hosting under a subpath).
-- Ensure the server at `apiUrl` is reachable from the deployed frontend.
-- Provide `MAPBOX_TOKEN` during frontend build/serve.
-- For production backend, set `NODE_ENV=production` and `DB_END_POINT_2`.
+- **Frontend base path:** by default the build output expects to be served at `/`.
+  If hosting under a subpath (e.g. `/cha-mapping/`), use `npm run build:subpath`
+  or pass `--base-href /your-path/` to `ng build`.
+- **SPA routing fallback:** configure your server to rewrite all 404s to `index.html`.
+- **Production API URL:** update `frontend/src/environments/environment.production.ts`
+  with the URL of your deployed backend before running the production build.
+- **Backend env vars:** set `NODE_ENV=production` and `DB_END_POINT_2` on the server.
+- **Mapbox token:** provide `MAPBOX_TOKEN` in `.env` before building the frontend.
 
 
 Developer utilities
 -------------------
-- Generate PGP assets (if used by export flows):
+Generate PGP assets (used by the encrypted export flow):
 ```bash
 cd frontend
 npm run gen:pgp
@@ -181,7 +247,45 @@ npm run gen:pgp
 
 Troubleshooting
 ---------------
-- Map not loading: verify `MAPBOX_TOKEN` and that the token has Mapbox GL and Search access.
-- Geo layers empty: confirm GeoJSON files exist in `frontend/public/data/` and are reachable.
-- Config not loading: ensure backend is running and MongoDB contains a configuration document (or POST one via the API).
-- Deployed app 404 on refresh: confirm your hosting respects Angular SPA fallback and the `baseHref` `/cha-mapping/`.
+- Map not loading: verify `MAPBOX_TOKEN` is set and the token has Mapbox GL and Search API access.
+- Geo layers empty: confirm GeoJSON files exist in `frontend/public/data/` and are reachable at runtime.
+- Config not loading: ensure the backend is running and MongoDB contains a configuration document (or POST one via the `/configuration` endpoint).
+- Deployed app 404 on refresh: confirm your hosting is configured to serve `index.html` as the SPA fallback.
+- Wrong asset paths after deploy: check that `--base-href` matches the subpath your server is serving the app under.
+
+
+Contributing
+------------
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository and create a feature branch from `main`.
+2. Make your changes, keeping commits small and focused.
+3. Ensure `npm run lint` and `npm test` pass in the `frontend/` directory.
+4. Open a pull request with a clear description of the change and the motivation behind it.
+
+Please do not commit `.env` files or any credentials.
+
+
+License
+-------
+This project is licensed under the MIT License.
+
+Copyright (c) 2025 UIC Innovation Center
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
